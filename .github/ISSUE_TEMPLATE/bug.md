@@ -1,13 +1,13 @@
 ---
-name: feat
-about: feat issue template
+name: bug
+about: bug issue template
 title: ''
-labels: feat
+labels: bug
 assignees: ''
 ---
 
-## 상세 내용
-<!-- ex) Github 소셜 로그인 기능이 필요합니다. -->
+## 버그 상세 내용
+<!-- ex) Github 소셜 로그인 기능이 안됩니다. -->
 
 ## 예상 소요 시간
 -[ ] `0.5h`
