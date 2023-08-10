@@ -2,17 +2,17 @@
 
 <!-- 해당되는 Pull Request 타입에 모두 체크해주세요. -->
 <!-- 체크 시 "-[x]" 이렇게 x 표시 하면 됩니다.  -->
--[ ] 🍕 Feature
--[ ] 🐛 Bug Fix
--[ ] 📝 Documentation Update
--[ ] 🎨 Style
--[ ] 🧑‍💻 Code Refactor
--[ ] 🔥 Performance Improvements
--[ ] ✅ Test
--[ ] 🤖 Build
--[ ] 🔁 CI
--[ ] 📦 Chore (Release)
--[ ] ⏩ Revert
+- [ ] 🍕 Feature
+- [ ] 🐛 Bug Fix
+- [ ] 📝 Documentation Update
+- [ ] 🎨 Style
+- [ ] 🧑‍💻 Code Refactor
+- [ ] 🔥 Performance Improvements
+- [ ] ✅ Test
+- [ ] 🤖 Build
+- [ ] 🔁 CI
+- [ ] 📦 Chore (Release)
+- [ ] ⏩ Revert
 
 
 ## Description
