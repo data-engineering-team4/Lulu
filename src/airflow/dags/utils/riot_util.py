@@ -77,3 +77,10 @@ def get_summoner_info_by_tier_division_page(tier, division, page, api_key):
     """
     url = f"https://kr.api.riotgames.com/lol/league-exp/v4/entries/RANKED_SOLO_5x5/{tier}/{division}?page={page}"
     return get_json_response(url, api_key)
+
+def get_high_elo_summoner_info(high_elo, api_key):
+    """
+    천상계 summoner 정보 반환.
+    """
+    url = f"https://kr.api.riotgames.com/lol/league/v4/{high_elo}leagues/by-queue/RANKED_SOLO_5x5"
+    return get_json_response(url, api_key)

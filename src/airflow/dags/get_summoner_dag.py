@@ -38,9 +38,9 @@ with DAG(
                 for page in range(start_page, end_page + 1):
                     # logging.info(f"Processing tier {tier}, division {division}, page {page}")
                     json_data = get_summoner_info_by_tier_division_page(tier, division, page, api_key)
-                    logging.info(json_data)
+                    # logging.info(json_data)
                     for data in json_data:
-                        logging.info(data)
+                        # logging.info(data)
                         summoner_data_list.append({
                             'tier': tier,
                             'division': division,
