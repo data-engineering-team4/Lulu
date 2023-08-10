@@ -71,9 +71,9 @@ def get_champion_mastery_by_puuid(puu_id, api_key):
     url = f"https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puu_id}"
     return get_json_response(url, api_key)
 
-def get_summonerId_by_tier_division_page(tier, division, page, api_key):
+def get_summoner_info_by_tier_division_page(tier, division, page, api_key):
     """
-    tier로 summoner_id 반환.
+    tier로 summoner 정보 반환.
     """
     url = f"https://kr.api.riotgames.com/lol/league-exp/v4/entries/RANKED_SOLO_5x5/{tier}/{division}?page={page}"
     return get_json_response(url, api_key)
