@@ -1,101 +1,126 @@
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.decorators import task
+from airflow.operators.dummy_operator import DummyOperator
 from datetime import datetime
-from dotenv import load_dotenv
-from utils.riot_util import get_match_details
-import os
-import pandas as pd
-import redis
-import time
-from utils.match_list import match_list
+from utils.match_list import match_list # 임시 match_list
 
-load_dotenv()
+with DAG(
+    dag_id = 'get_match_dag',
+    schedule_interval=None,
+    start_date = datetime(2023, 8, 11),
+    catchup=False,
+) as dag:
+    
+    start = DummyOperator(task_id='start')
+    
+    @task()
+    def check_and_store_duplicate(match_ids):
+        from dotenv import load_dotenv
+        import redis
+        import os
 
-api_key = os.environ.get('api_key')
+        load_dotenv()    
+        redis_host = os.environ.get('redis_host')
+        redis_port = os.environ.get('redis_port')
+        redis_client = redis.Redis(host=redis_host, port=redis_port)
 
-# Connect to Redis server
-redis_host = 'redis'
-redis_port = 6379
-redis_client = redis.Redis(host=redis_host, port=redis_port)
+        redis_key = 'match_ids'
+        non_duplicates = []
 
-def check_and_store_duplicate(match_ids):
-    redis_key = 'processed_match_ids'
-    non_duplicates = []
+        for match_id in match_ids:
+            is_duplicate = redis_client.sismember(redis_key, match_id)
 
-    for match_id in match_ids:
-        is_duplicate = redis_client.sismember(redis_key, match_id)
+            if not is_duplicate:
+                redis_client.sadd(redis_key, match_id)
+                non_duplicates.append(match_id)
 
-        if not is_duplicate:
-            redis_client.sadd(redis_key, match_id)
-            non_duplicates.append(match_id)
+        return non_duplicates
+    
+    @task()
+    def extract_match_data(match_ids):
+        from dotenv import load_dotenv
+        from utils.riot_util import get_match_details
+        import pandas as pd
+        import time
+        import os
 
-    print("Non-duplicate match IDs:", non_duplicates)
-    return non_duplicates
+        load_dotenv()
 
-def extract_match_data(**kwargs):
-    match_ids = kwargs['task_instance'].xcom_pull(task_ids='check_and_store_task')
-    api_key = os.environ.get('api_key')
+        api_key = os.environ.get('api_key')
 
-    for match_id in match_ids:
-        match_details = get_match_details(match_id, api_key)
+        data = {'match_id': [], 'teamId': [], 'position': [], 'kills': [], 'deaths': [], 'assists': [], 'win': [], 'championName': [], 'championId': [], 'patch': []}
+        total_df = pd.DataFrame(data)
 
-        teamId = [participant['teamId'] for participant in match_details['info']['participants']]
-        teamPosition = [participant['teamPosition'] for participant in match_details['info']['participants']]
-        champion_names = [participant['championName'] for participant in match_details['info']['participants']]
-        win = [participant['win'] for participant in match_details['info']['participants']]
-        patch = (match_details['info']['gameVersion'])[:5]
+        for match_id in match_ids:
+            match_details = get_match_details(match_id, api_key)
 
-        teams = {}
-        for i, team_id in enumerate(teamId):
-            if team_id not in teams:
-                teams[team_id] = {'TOP': [], 'JUNGLE': [], 'MIDDLE': [], 'BOTTOM': [], 'UTILITY': [], 'win': win[i], 'patch': patch}
-            position = teamPosition[i]
-            teams[team_id][position].append(champion_names[i])
+            teamId = [participant['teamId'] for participant in match_details['info']['participants']]
+            teamPosition = [participant['teamPosition'] for participant in match_details['info']['participants']]
+            kills = [participant['kills'] for participant in match_details['info']['participants']]
+            deaths = [participant['deaths'] for participant in match_details['info']['participants']]
+            assists = [participant['assists'] for participant in match_details['info']['participants']]
+            win = [participant['win'] for participant in match_details['info']['participants']]
+            championName = [participant['championName'] for participant in match_details['info']['participants']]
+            championId = [participant['championId'] for participant in match_details['info']['participants']]
+            patch = (match_details['info']['gameVersion'])[:5]
 
-        data = {'match_id': [], 'teamId': [], 'TOP': [], 'JUNGLE': [], 'MIDDLE': [], 'BOTTOM': [], 'SUPPORT': [], 'win': [], 'patch': []}
-        for team_id, team_data in teams.items():
-            data['match_id'].append(match_id)
-            data['teamId'].append(team_id)
-            data['TOP'].append(team_data['TOP'][0])
-            data['JUNGLE'].append(team_data['JUNGLE'][0])
-            data['MIDDLE'].append(team_data['MIDDLE'][0])
-            data['BOTTOM'].append(team_data['BOTTOM'][0])
-            data['SUPPORT'].append(team_data['UTILITY'][0])
-            data['win'].append(team_data['win'])
-            data['patch'].append(team_data['patch'])
-            print(data)
+            data = {'match_id': [], 'teamId': [], 'position': [], 'kills': [], 'deaths': [], 'assists': [], 'win': [], 'championName': [], 'championId': [], 'patch': []}
+            for i in range(10):
+                data['match_id'].append(match_id)
+                data['teamId'].append(teamId[i])
+                data['position'].append(teamPosition[i])
+                data['kills'].append(kills[i])
+                data['deaths'].append(deaths[i])
+                data['assists'].append(assists[i])
+                data['win'].append(win[i])
+                data['championName'].append(championName[i])
+                data['championId'].append(championId[i])
+                data['patch'].append(patch)
 
-        file_path = 'dags/data.csv'
-        df = pd.DataFrame(data)
-        if os.path.exists(file_path):
-            existing_df = pd.read_csv(file_path)
-            updated_df = pd.concat([existing_df, df], ignore_index=True)
+            df = pd.DataFrame(data)
+            total_df = pd.concat([total_df, df], ignore_index=True)
+            time.sleep(0.9)
+
+        return total_df
+    
+    @task()
+    def upload_to_s3(total_df):
+        from dotenv import load_dotenv
+        import pandas as pd
+        import os
+        import boto3
+
+        load_dotenv()
+
+        aws_access_key_id = os.environ.get('aws_access_key_id')
+        aws_secret_access_key = os.environ.get('aws_secret_access_key')
+        bucket_name = os.environ.get('bucket_name')
+        s3_folder = os.environ.get('s3_folder')
+
+        existing_df = None
+        s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+        try:
+            response = s3.get_object(Bucket=bucket_name, Key=f'{s3_folder}/data.csv')
+            existing_df = pd.read_csv(response['Body'])
+        except Exception as e:
+            pass
+
+        # 데이터 병합 및 업로드
+        if existing_df is not None:
+            updated_df = pd.concat([existing_df, total_df], ignore_index=True)
         else:
-            updated_df = df
+            updated_df = total_df
 
-        updated_df.to_csv(file_path, index=False)
-        time.sleep(0.9)
+        temp_csv_path = 'dags/temp_data.csv'
+        updated_df.to_csv(temp_csv_path, index=False)
+        s3.upload_file(temp_csv_path, bucket_name, f'{s3_folder}/data.csv')
+        os.remove(temp_csv_path)
 
-default_args = {
-    'owner': 'airflow',
-    'start_date': datetime(2023, 8, 10),
-    'retries': 1,
-}
+    check_and_store_task = check_and_store_duplicate(match_list)
+    extract_match_data_task = extract_match_data(check_and_store_task)
+    upload_to_s3_task = upload_to_s3(extract_match_data_task)
 
-dag = DAG('get_match_dag', default_args=default_args, schedule_interval=None)
+    end = DummyOperator(task_id='end')
 
-check_and_store_task = PythonOperator(
-    task_id='check_and_store_task',
-    python_callable=check_and_store_duplicate,
-    op_args=[match_list],
-    dag=dag,
-)
+    start >> check_and_store_task >> extract_match_data_task >> upload_to_s3_task >> end
 
-extract_match_data_task = PythonOperator(
-    task_id='extract_match_data_task',
-    python_callable=extract_match_data,
-    provide_context=True,
-    dag=dag,
-)
-
-check_and_store_task >> extract_match_data_task
