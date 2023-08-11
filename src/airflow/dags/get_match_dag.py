@@ -16,22 +16,20 @@ with DAG(
     @task()
     def check_and_store_duplicate(match_ids):
         from dotenv import load_dotenv
-        import redis
-        import os
+        from airflow.providers.redis.hooks.redis import RedisHook
 
         load_dotenv()    
-        redis_host = os.environ.get('redis_host')
-        redis_port = os.environ.get('redis_port')
-        redis_client = redis.Redis(host=redis_host, port=redis_port)
+        redis_hook = RedisHook(redis_conn_id='redis_conn_id')
+        redis_conn = redis_hook.get_conn()
 
         redis_key = 'match_ids'
         non_duplicates = []
 
         for match_id in match_ids:
-            is_duplicate = redis_client.sismember(redis_key, match_id)
+            is_duplicate = redis_conn.sismember(redis_key, match_id)
 
             if not is_duplicate:
-                redis_client.sadd(redis_key, match_id)
+                redis_conn.sadd(redis_key, match_id)
                 non_duplicates.append(match_id)
 
         return non_duplicates

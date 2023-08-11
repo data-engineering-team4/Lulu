@@ -19,22 +19,21 @@ with DAG(
 
         from utils.riot_util import get_summoner_info_by_tier_division_page
         import time
-        import redis
         import logging
         from dotenv import load_dotenv
         import os
+        from airflow.providers.redis.hooks.redis import RedisHook
 
         logging.basicConfig(level=logging.INFO)
 
         load_dotenv()
         api_key = os.getenv("API_KEY")
 
-        redis_host = 'redis'
-        redis_port = 6379
-        redis_client = redis.Redis(host=redis_host, port=redis_port)
+        redis_hook = RedisHook(redis_conn_id='redis_conn_id')
+        redis_conn = redis_hook.get_conn()
 
         redis_key = 'processed_summoners_ids'
-        processed_summoner_ids = set(redis_client.smembers(redis_key))
+        processed_summoner_ids = set(redis_conn.smembers(redis_key))
         logging.info("redis",len(processed_summoner_ids))
 
         tier_list = ["DIAMOND", "EMERALD", "PLATINUM", "GOLD", "SILVER", "BRONZE", "IRON"]
@@ -59,7 +58,7 @@ with DAG(
                                 'summoner_id': data['summonerId'],
                                 'summoner_name': data['summonerName'],
                             })
-                            redis_client.sadd(redis_key, summoner_id)
+                            redis_conn.sadd(redis_key, summoner_id)
                             processed_summoner_ids.add(summoner_id)
                     time.sleep(1.2)
 
