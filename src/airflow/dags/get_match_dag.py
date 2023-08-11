@@ -4,7 +4,6 @@ from airflow.operators.dummy_operator import DummyOperator
 from datetime import datetime
 from utils.match_list import match_list # 임시 match_list
 
-
 with DAG(
     dag_id = 'get_match_dag',
     schedule_interval=None,
@@ -49,7 +48,7 @@ with DAG(
 
         api_key = os.environ.get('api_key')
 
-        data = {'match_id': [], 'teamId': [], 'participantId': [], 'position': [], 'kills': [], 'deaths': [], 'assists': [], 'win': [], 'championName': [], 'championId': [], 'patch': []}
+        data = {'match_id': [], 'teamId': [], 'position': [], 'kills': [], 'deaths': [], 'assists': [], 'win': [], 'championName': [], 'championId': [], 'patch': []}
         total_df = pd.DataFrame(data)
 
         for match_id in match_ids:
