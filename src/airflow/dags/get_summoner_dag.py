@@ -1,14 +1,6 @@
 from airflow import DAG
 from airflow.decorators import task
 from datetime import datetime, timedelta
-import logging
-from dotenv import load_dotenv
-import os
-
-logging.basicConfig(level=logging.INFO)
-# env_path = os.path.join(os.path.dirname(__file__), '../../../.env')
-# load_dotenv(dotenv_path=env_path)
-# api_key = os.getenv("API_KEY")
 
 with DAG(
     dag_id = 'get_summoners_by_tier',
@@ -23,8 +15,24 @@ with DAG(
 
         from utils.riot_util import get_summoner_info_by_tier_division_page
         import time
+        import redis
+        import logging
+        from dotenv import load_dotenv
+        import os
 
-        api_key = ""
+        logging.basicConfig(level=logging.INFO)
+
+        load_dotenv()
+        api_key = os.getenv("API_KEY")
+
+        redis_host = 'redis'
+        redis_port = 6379
+        redis_client = redis.Redis(host=redis_host, port=redis_port)
+
+        redis_key = 'processed_summoners_ids'
+        processed_summoner_ids = set(redis_client.smembers(redis_key))
+        logging.info("redis",len(processed_summoner_ids))
+
         tier_list = ["DIAMOND", "EMERALD", "PLATINUM", "GOLD", "SILVER", "BRONZE", "IRON"]
         division_list = ["I", "II", "III", "IV"]
 
@@ -36,17 +44,19 @@ with DAG(
         for tier in tier_list:
             for division in division_list:
                 for page in range(start_page, end_page + 1):
-                    # logging.info(f"Processing tier {tier}, division {division}, page {page}")
                     json_data = get_summoner_info_by_tier_division_page(tier, division, page, api_key)
-                    # logging.info(json_data)
                     for data in json_data:
-                        # logging.info(data)
-                        summoner_data_list.append({
-                            'tier': tier,
-                            'division': division,
-                            'summoner_id': data['summonerId'],
-                            'summoner_name': data['summonerName'],
-                        })
+                        summoner_id = data['summonerId']
+
+                        if summoner_id not in processed_summoner_ids:
+                            summoner_data_list.append({
+                                'tier': tier,
+                                'division': division,
+                                'summoner_id': data['summonerId'],
+                                'summoner_name': data['summonerName'],
+                            })
+                            redis_client.sadd(redis_key, summoner_id)
+                            processed_summoner_ids.add(summoner_id)
                     time.sleep(1.2)
 
         return summoner_data_list
