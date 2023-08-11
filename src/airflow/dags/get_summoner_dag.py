@@ -1,6 +1,8 @@
 from airflow import DAG
 from airflow.decorators import task
 from datetime import datetime, timedelta
+from airflow.operators.dagrun_operator import TriggerDagRunOperator
+from airflow.operators.dummy_operator import DummyOperator
 
 with DAG(
     dag_id = 'get_summoners_by_tier',
@@ -9,6 +11,8 @@ with DAG(
     start_date = datetime(2023,8,8),
     catchup=False,
 ) as dag:
+
+    start = DummyOperator(task_id='start')
 
     @task()
     def get_summoners_by_tier():
@@ -61,4 +65,13 @@ with DAG(
 
         return summoner_data_list
 
-    get_summoners_by_tier()
+    get_summoners = get_summoners_by_tier()
+
+    trigger_get_puuid_dag = TriggerDagRunOperator(
+        task_id='trigger_get_puuid_dag',
+        trigger_dag_id='get_summoner_puuid',
+    )
+
+    end = DummyOperator(task_id='end')
+
+    start >> get_summoners >> trigger_get_puuid_dag >> end
