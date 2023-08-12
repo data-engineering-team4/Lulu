@@ -7,7 +7,7 @@ from utils.match_list import match_list # 임시 match_list
 with DAG(
     dag_id = 'get_match_dag',
     schedule_interval=None,
-    start_date = datetime(2023, 8, 11),
+    start_date = datetime(2023, 8, 12),
     catchup=False,
 ) as dag:
     
@@ -84,7 +84,7 @@ with DAG(
     @task()
     def upload_to_s3(total_df):
         from dotenv import load_dotenv
-        import pandas as pd
+        from utils.common_util import get_current_datetime, get_formatted_date
         import os
         import boto3
 
@@ -94,14 +94,15 @@ with DAG(
         aws_secret_access_key = os.environ.get('aws_secret_access_key')
         bucket_name = os.environ.get('bucket_name')
         s3_folder = os.environ.get('s3_folder')
-        current_date = datetime.now().strftime('%Y-%m-%d')
+        NOW = get_current_datetime()
+        YMD = get_formatted_date(NOW)
 
 
         s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
 
         temp_csv_path = 'dags/temp_data.csv'
         total_df.to_csv(temp_csv_path, index=False)
-        s3.upload_file(temp_csv_path, bucket_name, f'{s3_folder}/{current_date}/data.csv')
+        s3.upload_file(temp_csv_path, bucket_name, f'{s3_folder}/{YMD}/data.csv')
         os.remove(temp_csv_path)
 
     check_and_store_task = check_and_store_duplicate(match_list)
