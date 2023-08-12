@@ -94,24 +94,14 @@ with DAG(
         aws_secret_access_key = os.environ.get('aws_secret_access_key')
         bucket_name = os.environ.get('bucket_name')
         s3_folder = os.environ.get('s3_folder')
+        current_date = datetime.now().strftime('%Y-%m-%d')
 
-        existing_df = None
+
         s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
-        try:
-            response = s3.get_object(Bucket=bucket_name, Key=f'{s3_folder}/data.csv')
-            existing_df = pd.read_csv(response['Body'])
-        except Exception as e:
-            pass
-
-        # 데이터 병합 및 업로드
-        if existing_df is not None:
-            updated_df = pd.concat([existing_df, total_df], ignore_index=True)
-        else:
-            updated_df = total_df
 
         temp_csv_path = 'dags/temp_data.csv'
-        updated_df.to_csv(temp_csv_path, index=False)
-        s3.upload_file(temp_csv_path, bucket_name, f'{s3_folder}/data.csv')
+        total_df.to_csv(temp_csv_path, index=False)
+        s3.upload_file(temp_csv_path, bucket_name, f'{s3_folder}/{current_date}/data.csv')
         os.remove(temp_csv_path)
 
     check_and_store_task = check_and_store_duplicate(match_list)
