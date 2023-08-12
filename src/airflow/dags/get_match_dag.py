@@ -7,7 +7,7 @@ from utils.match_list import match_list # 임시 match_list
 with DAG(
     dag_id = 'get_match_dag',
     schedule_interval=None,
-    start_date = datetime(2023, 8, 12),
+    start_date = datetime(2023, 8, 11),
     catchup=False,
 ) as dag:
     
