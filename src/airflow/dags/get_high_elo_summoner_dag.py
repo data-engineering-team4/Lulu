@@ -1,32 +1,33 @@
+import json
+
 from airflow import DAG
-from airflow.decorators import task
 from datetime import datetime, timedelta
-from airflow.operators.dagrun_operator import TriggerDagRunOperator
-from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.empty import EmptyOperator
+from airflow.operators.python import PythonOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+
 
 with DAG(
     dag_id = 'get_high_elo_summoners_by_tier',
     schedule_interval=None,
     # schedule_interval=timedelta(days=7),
-    start_date = datetime(2023,8,8),
+    start_date=datetime(2023, 8, 9),
     catchup=False,
 ) as dag:
 
-    start = DummyOperator(task_id='start')
+    start = EmptyOperator(task_id='start')
 
-    @task()
-    def get_high_elo_summoners_by_tier():
+    def get_high_elo_summoners_by_tier(**context):
 
         from utils.riot_util import get_high_elo_summoner_info
         import time
         import logging
-        from dotenv import load_dotenv
-        import os
+        from airflow.models import Variable
 
         logging.basicConfig(level=logging.INFO)
 
-        load_dotenv()
-        api_key = os.getenv("API_KEY")
+        # TODO API_KEY Airflow에서 가져옴 -> AWS Secrets Manager로 대체하기
+        api_key = Variable.get("RIOT_KEY_1")
 
         high_elo_list = ["challenger", "grandmaster", "master"]
         summoner_data_list = []
@@ -45,14 +46,24 @@ with DAG(
 
         return summoner_data_list
 
+    def push_summoner_data_to_xcom(**context):
+        summoner_data_list = get_high_elo_summoners_by_tier(**context)
+        context['task_instance'].xcom_push(key='summoner_data_list', value=json.dumps(summoner_data_list))
+        return summoner_data_list
 
-    get_high_elo_summoners = get_high_elo_summoners_by_tier()
+
+    push_summoner_data_to_xcom_op = PythonOperator(
+        task_id='push_summoner_data_to_xcom',
+        python_callable=push_summoner_data_to_xcom,
+        provide_context=True,
+        dag=dag
+    )
 
     trigger_get_puuid_dag = TriggerDagRunOperator(
         task_id='trigger_get_puuid_dag',
         trigger_dag_id='get_summoner_puuid',
     )
 
-    end = DummyOperator(task_id='end')
+    end = EmptyOperator(task_id='end')
 
-    start >> get_high_elo_summoners >> trigger_get_puuid_dag >> end
+    start >> push_summoner_data_to_xcom_op >> trigger_get_puuid_dag >> end
