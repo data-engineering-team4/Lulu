@@ -71,13 +71,15 @@ def convert_to_kst(timestamp_ms):
 
     return datetime_kst
 
-def get_puuid_by_name(summoner_name, api_key):
+def get_id_by_name(summoner_name, api_key):
     """
-    summoner_name으로 puuid 반환.
+    summoner_name으로 id 반환.
     """
     summoner_details = get_summoner_details(summoner_name, api_key)
-    puu_id = summoner_details['puuid']
-    return puu_id
+    print(summoner_details)
+    if 'id' in summoner_details:
+        id = summoner_details['id']
+        return id
 
 
 def get_puuid_by_id(summoner_id, api_key):
@@ -91,19 +93,20 @@ def get_puuid_by_id(summoner_id, api_key):
     puu_id = summoner_details['puuid']
     return puu_id
 
+
 def get_champion_mastery_by_name(summoner_name, api_key):
     """
     summoner_name으로 챔피언 숙련도 반환.
     """
-    puu_id = get_puuid_by_name(summoner_name, api_key)
-    url = f"https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puu_id}"
+    id = get_id_by_name(summoner_name, api_key)
+    url = f"https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/{id}"
     return get_json_response(url, api_key)
 
-def get_champion_mastery_by_puuid(puu_id, api_key):
+def get_champion_mastery_by_id(id, api_key):
     """
-    puu_id로 챔피언 숙련도 반환.
+    id로 챔피언 숙련도 반환.
     """
-    url = f"https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puu_id}"
+    url = f"https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/{id}"
     return get_json_response(url, api_key)
 
 def get_summoner_info_by_tier_division_page(tier, division, page, api_key):
