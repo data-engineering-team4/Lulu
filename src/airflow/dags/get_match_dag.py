@@ -102,7 +102,7 @@ with DAG(
 
         temp_csv_path = 'dags/temp_data.csv'
         total_df.to_csv(temp_csv_path, index=False)
-        s3.upload_file(temp_csv_path, bucket_name, f'{s3_folder}/{YMD}/data.csv')
+        s3.upload_file(temp_csv_path, bucket_name, f'{s3_folder}/match/{YMD}/data.csv')
         os.remove(temp_csv_path)
 
     check_and_store_task = check_and_store_duplicate(match_list)
