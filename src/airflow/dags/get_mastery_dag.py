@@ -1,76 +1,99 @@
 from airflow import DAG
 from airflow.decorators import task
+from airflow.operators.dummy import DummyOperator
 from datetime import datetime
+from utils.id_list import id_list # 임시 id_list
 
 with DAG(
-    dag_id = 'get_mastery',
+    dag_id = 'get_mastery_dag',
     schedule_interval=None,
-    start_date = datetime(2023,8,8),
+    start_date = datetime(2023, 8, 15),
     catchup=False,
 ) as dag:
-    def create_champion_mastery_dateframe():
-        """
-        현재 db에 저장된 puuid들의 champion_mastery를 불러온뒤, csv로 저장.
-        """
-        import json
+    
+    # start = DummyOperator(task_id='start')
+    
+    @task()
+    def get_champion_mastery(id_list):
+        from dotenv import load_dotenv
+        from utils.riot_util import get_champion_mastery_by_id
         import pandas as pd
-        import numpy as np
-
-        mysql_connection = connect_to_mysql()
-        puuids = get_all_puuid(mysql_connection)
-
-        with open("../analysis/champion_dictionary.json", "r") as f:
-            champion_dict = json.load(f)
-
-        columns = [f"{champion}" for champion in champion_dict.values() for suffix in
-                   ['championPoints']]
-        # ['championLevel']
-
-        df = pd.DataFrame(columns=['puuid'] + columns, dtype=np.int64)
-        df.set_index('puuid', inplace=True)
-
-        for pid in puuids:
-            champion_data = get_champion_mastery_by_puuid(pid, api_key)
-            time.sleep(1)
-            for champion in champion_data:
-                champion_name = champion_dict[str(champion['championId'])]
-                df.at[pid, champion_name] = champion['championPoints']
-
-        df.fillna(0, inplace=True)
-        df.to_csv('../analysis/champion_mastery_dataframe.csv', index=False)
-        mysql_connection.close()
-
-
-    @task()
-    def dd():
-        from kafka import KafkaProducer
+        import time
+        import os
         import json
 
-        kafka_bootstrap_servers = "localhost:29092"
-        kafka_topic = "summonersId"
+        load_dotenv()
+        api_key = os.environ.get('api_key')
 
-        producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_servers,
-                                 value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+        script_path = os.path.dirname(os.path.abspath(__file__))
+        json_file_path = os.path.join(script_path, 'utils', 'champion_dictionary.json')
 
-        data = 'Hello'
-        producer.send(kafka_topic, data)
-        producer.flush()
-        producer.close()
+        with open(json_file_path, 'r') as json_file:
+            json_data = json_file.read()
 
+        champion_dict = json.loads(json_data)
+
+        data = {'id': []}
+        data.update({key: [] for key in champion_dict.keys() if key != 'id'})
+        total_df = pd.DataFrame(data)
+
+        for id in id_list:
+            tmp = get_champion_mastery_by_id(id, api_key)
+            champion_id = []
+            champion_points = []
+            for champion in tmp:
+                champion_id.append(champion['championId'])
+                champion_points.append(champion['championPoints'])
+
+            data = {'id': []}
+            data.update({key: [] for key in champion_dict.keys() if key != 'id'})
+
+            data['id'].append(id)
+
+            for i in range(len(champion_id)):
+                if str(champion_id[i]) in data:
+                    data[str(champion_id[i])].append(champion_points[i])
+            
+            for key in data.keys():
+                if key != 'id' and not data[key]:
+                    data[key].append(0)
+            
+
+            df = pd.DataFrame(data)
+            total_df = pd.concat([total_df, df], ignore_index=True)
+            time.sleep(1)
+        
+        return(total_df)
+    
     @task()
-    def get_mastery_example():
-        from kafka import KafkaConsumer
+    def upload_to_s3(total_df):
+        from dotenv import load_dotenv
+        from utils.common_util import get_current_datetime, get_formatted_date
+        import os
+        import boto3
 
-        kafka_bootstrap_servers = "localhost:29092"
-        kafka_topic = "summonersId"
+        load_dotenv()
 
-        consumer = KafkaConsumer(
-            kafka_topic,
-            bootstrap_servers=kafka_bootstrap_servers,
-            value_deserializer=lambda x: x.decode('utf-8')
-        )
+        aws_access_key_id = os.environ.get('aws_access_key_id')
+        aws_secret_access_key = os.environ.get('aws_secret_access_key')
+        bucket_name = os.environ.get('bucket_name')
+        s3_folder = os.environ.get('s3_folder')
+        NOW = get_current_datetime()
+        YMD = get_formatted_date(NOW)
 
-        for message in consumer:
-            print(message.value)
 
-    dd() >> get_mastery_example()
+        s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+
+        temp_csv_path = 'dags/temp_data.csv'
+        total_df.to_csv(temp_csv_path, index=False)
+        s3.upload_file(temp_csv_path, bucket_name, f'{s3_folder}/mastery/{YMD}/data.csv')
+        os.remove(temp_csv_path)
+
+    get_champion_mastery_task = get_champion_mastery(id_list)
+    upload_to_s3_task = upload_to_s3(get_champion_mastery_task)
+
+    # end = DummyOperator(task_id='end')
+
+    # start >> get_champion_mastery_task >> upload_to_s3_task >> end
+    get_champion_mastery_task >> upload_to_s3_task
+
