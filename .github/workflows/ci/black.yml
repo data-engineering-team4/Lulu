@@ -24,4 +24,9 @@ jobs:
         pip install black  
 
     - name: Check code formatting with Black
-      run: black --check .
+      run: |
+        black --check .
+        if [ $? -ne 0 ]; then
+          echo "Black check failed. Please format your code."
+          exit 1
+        fi
