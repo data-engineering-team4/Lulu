@@ -48,7 +48,7 @@ def get_match_history(puu_id, start_time, start, count, api_key):
     """
 
     # Get current timestamp in milliseconds
-    end_time = int(datetime.datetime.now().timestamp() * 1000)
+    end_time = int(datetime.now().timestamp() * 1000)
 
     url = f'https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/{puu_id}/ids?startTime={start_time}&endTime={end_time}&type=ranked&start={start}&count={count}'
     return get_json_response(url, api_key)
