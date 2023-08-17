@@ -52,3 +52,36 @@ def convert_milliseconds_to_datetime(milliseconds, format='%Y-%m-%d %H:%M'):
     dt = datetime.datetime.fromtimestamp(milliseconds / 1000)
     date_str = dt.strftime(format)
     return date_str
+
+def upload_to_s3(total_df, type, num):
+    import os
+    import boto3
+    from airflow.models import Variable
+
+    aws_access_key_id = Variable.get('aws_access_key_id')
+    aws_secret_access_key = Variable.get('aws_secret_access_key')
+    bucket_name = Variable.get('bucket_name')
+    s3_folder = Variable.get('s3_folder')
+    NOW = get_current_datetime()
+    YMD = get_formatted_date(NOW)
+
+
+    s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+
+    temp_csv_path = 'dags/temp_data.csv'
+    total_df.to_csv(temp_csv_path, index=False)
+    s3.upload_file(temp_csv_path, bucket_name, f'{s3_folder}/{type}/{YMD}/data{num}.csv')
+    os.remove(temp_csv_path)
+
+def setup_task(key_num):
+    from airflow.providers.redis.hooks.redis import RedisHook
+    from airflow.models import Variable
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+    api_key = Variable.get(f"RIOT_KEY_{key_num}")
+
+    redis_hook = RedisHook(redis_conn_id='redis_conn_id')
+    redis_conn = redis_hook.get_conn()
+
+    return api_key, redis_conn, logging
