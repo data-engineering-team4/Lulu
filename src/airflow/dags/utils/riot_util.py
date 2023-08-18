@@ -24,12 +24,35 @@ def get_summoner_details(summoner_name, api_key):
     url = f"https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/{summoner_name}"
     return get_json_response(url, api_key)
 
-def get_match_history(puu_id, num_match, api_key):
+
+def get_summoner_details_by_id(summoner_id, api_key):
     """
-    puu_id를 기준으로 matchid list를 반환.
+    summoner id를 기준으로 summoner를 찾아 정보 반환
+    :param summoner_id: 조회하려는 소환사의 고유 ID
+    :param api_key: Riot Games API에 접근하기 위한 API 키
+    :return:
     """
-    url = f"https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/{puu_id}/ids?count={num_match}"
+    url = f'https://kr.api.riotgames.com/lol/summoner/v4/summoners/{summoner_id}'
     return get_json_response(url, api_key)
+
+
+def get_match_history(puu_id, start_time, start, count, api_key):
+    """
+
+    :param puu_id: (str) Player's unique id
+    :param start_time: (int) Start timestamp in milliseconds since epoch
+    :param start: (int) Starting match index to fetch
+    :param count: (int) Number of matches to fetch
+    :param api_key: (str) RIOT API key
+    :return: dict: JSON Response containing match id list
+    """
+
+    # Get current timestamp in milliseconds
+    end_time = int(datetime.now().timestamp() * 1000)
+
+    url = f'https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/{puu_id}/ids?startTime={start_time}&endTime={end_time}&type=ranked&start={start}&count={count}'
+    return get_json_response(url, api_key)
+
 
 def get_match_details(match_id, api_key):
     """
@@ -48,14 +71,6 @@ def convert_to_kst(timestamp_ms):
 
     return datetime_kst
 
-def get_puuid_by_name(summoner_name, api_key):
-    """
-    summoner_name으로 puuid 반환.
-    """
-    summoner_details = get_summoner_details(summoner_name, api_key)
-    puu_id = summoner_details['puuid']
-    return puu_id
-
 def get_id_by_name(summoner_name, api_key):
     """
     summoner_name으로 id 반환.
@@ -65,6 +80,19 @@ def get_id_by_name(summoner_name, api_key):
     if 'id' in summoner_details:
         id = summoner_details['id']
         return id
+
+
+def get_puuid_by_id(summoner_id, api_key):
+    """
+    summoner_id으로 puuid 반환
+    :param summoner_id: 조회하려는 소환사의 고유 ID
+    :param api_key: Riot Games API에 접근하기 위한 API 키
+    :return: 해당 소환사의 puuid
+    """
+    summoner_details = get_summoner_details_by_id(summoner_id, api_key)
+    puu_id = summoner_details['puuid']
+    return puu_id
+
 
 def get_champion_mastery_by_name(summoner_name, api_key):
     """
