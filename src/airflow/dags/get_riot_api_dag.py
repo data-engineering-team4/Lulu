@@ -49,7 +49,7 @@ with DAG(
         division_list = ["I", "II", "III", "IV"]
 
         redis_key = f"summoner_data_{key_num}"
-        test_count = 0 # todo 삭제
+
         for tier in tier_list:
             for division in division_list:
                 try:
@@ -67,11 +67,7 @@ with DAG(
                             })
                             redis_conn.sadd(redis_key, summoner_data)
                             redis_conn.sadd(existing_user, summoner_id)
-                            test_count += 1
-                            if test_count >= 20: # todo 삭제
-                                test_count = 0
-                                logging.info(f"{tier}{division}20개 완료")
-                                break
+
                 except KeyError:
                     logging.error("api key limit")
                     continue
@@ -108,11 +104,6 @@ with DAG(
                     })
 
                     redis_conn.sadd(redis_key, high_elo_summoner_data)
-                    test_count += 1
-                    if test_count >= 20: # todo 삭제
-                        test_count = 0
-                        logging.info(f"{tier}{division}20개 완료")
-                        break
             except KeyError:
                 logging.error("api key limit")
                 continue
@@ -140,7 +131,7 @@ with DAG(
         seven_days_ago_timestamp_in_seconds = int(seven_days_ago.timestamp())
 
         # TODO TIER_MATCH_COUNT 변경
-        TIER_MATCH_COUNT = 20
+        TIER_MATCH_COUNT = 1000
         tier_list = ["CHALLENGER", "GRANDMASTER", "MASTER", "DIAMOND", "EMERALD", "PLATINUM", "GOLD", "SILVER",
                      "BRONZE", "IRON"]
         division_list = ["I", "II", "III", "IV"]
@@ -354,8 +345,8 @@ with DAG(
 
     with TaskGroup(group_id='mastery_task_group') as mastery_task_group:
         mastery_task_1 = get_champion_mastery(1)
-        mastery_task_2 = get_champion_mastery(2)
-        mastery_task_3 = get_champion_mastery(3)
+        # mastery_task_2 = get_champion_mastery(2)
+        # mastery_task_3 = get_champion_mastery(3)
 
     delete_redis_key_task = delete_redis_key()
 
