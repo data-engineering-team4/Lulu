@@ -39,7 +39,7 @@ with DAG(
 
         existing_user = 'processed_summoners_ids'
         processed_summoner_ids = set(member.decode() for member in redis_conn.smembers(existing_user))
-        logging.info(f"redis {len(processed_summoner_ids)}")
+        logging.info(f"🚀processed_summoner_ids {len(processed_summoner_ids)}")
 
         days_since_start = (datetime.now() - datetime(2023, 8, 17)).days
         start_page = (days_since_start * 4) % 200
@@ -70,6 +70,7 @@ with DAG(
 
                 except KeyError:
                     logging.error("api key limit")
+                    time.sleep(1.2)
                     continue
 
         # ex) 월요일:0, 화요일: 1, ... 일요일: 6
@@ -106,8 +107,9 @@ with DAG(
                     redis_conn.sadd(redis_key, high_elo_summoner_data)
             except KeyError:
                 logging.error("api key limit")
+                time.sleep(1.2)
                 continue
-
+        logging.info(f"🚀processed_summoner_ids {len(processed_summoner_ids)}")
 
     @task()
     def get_match_list(key_num):
@@ -120,14 +122,14 @@ with DAG(
 
         summoner_part = f"summoner_data_{key_num}"
         summoner_ids = [json.loads(member.decode()) for member in redis_conn.smembers(summoner_part)]
-        logging.info(f"redis {len(summoner_ids)}")
+        logging.info(f"🚀summoner_ids_{key_num} {len(summoner_ids)}")
 
         existing_match = 'processed_match_ids'
         processed_match_ids = set(member.decode() for member in redis_conn.smembers(existing_match))
-        logging.info(f"redis {len(processed_match_ids)}")
+        logging.info(f"🚀processed_match_ids {len(processed_match_ids)}")
 
-        # 7일 전의 datetime
-        seven_days_ago = datetime.datetime.now() - datetime.timedelta(days=7)
+        # 7일 전의 datetime todo 간격 정하기
+        seven_days_ago = datetime.datetime.now() - datetime.timedelta(days=14)
         seven_days_ago_timestamp_in_seconds = int(seven_days_ago.timestamp())
 
         # TODO TIER_MATCH_COUNT 변경
@@ -145,20 +147,18 @@ with DAG(
                     match_list_by_tier[tier + division] = []
 
         for summoner in summoner_ids:
+            # todo 개선 1. retry를 위해 갯수 redis or 저장된 match_data로 비교 2. summoner_ids를 티어별로 나눈뒤 진행하면 시간 절약
             tier = summoner['tier']
             if summoner['tier'] not in ["CHALLENGER", "GRANDMASTER", "MASTER"]:
                 tier = summoner['tier'] + summoner['division']
 
-            # 현재 티어의 match가 이미 20개를 넘겼다면, 다음 summoner로 넘어감
             if len(match_list_by_tier[tier]) >= TIER_MATCH_COUNT:
                 continue
 
             puuid = get_puuid_by_id(summoner['summoner_id'], api_key)
             summoner['puuid'] = puuid if puuid else None
-            if puuid:
-                logging.info(f'Success to fetch puuid for {summoner["summoner_name"]} - {summoner["puuid"]}')
-            else:
-                logging.error(f"Failed to fetch puuid for {summoner['summoner_name']} after retries, puuid set to None")
+            if not puuid:
+                logging.error(f"🚀Failed to fetch puuid for {summoner['summoner_name']} after retries, puuid set to None")
             _wait_for_request()
 
             puuid = summoner['puuid']
@@ -179,11 +179,10 @@ with DAG(
                     match_ids_to_add = [match for match in unique_matches]
                     processed_match_ids.update([match for match in unique_matches])
                     redis_conn.sadd(existing_match, *match_ids_to_add)
-
-            logging.info(f'{tier} : {len(match_list_by_tier[tier])}')
+                    logging.info(f'🚀{tier} : {len(match_list_by_tier[tier])}')
             _wait_for_request()
-
             if all(len(match_list) >= TIER_MATCH_COUNT for match_list in match_list_by_tier.values()):
+                logging.info(f'🚀match_list finished')
                 break
 
         redis_key = f"match_data_{key_num}"
@@ -195,8 +194,7 @@ with DAG(
                     'matchId': match
                 })
                 redis_conn.sadd(redis_key, match_data)
-                logging.info(match_data)
-
+        logging.info(f'🚀match_data finished')
 
     @task()
     def extract_match_data(key_num):
@@ -206,10 +204,20 @@ with DAG(
         import pandas as pd
         import json
 
+        def save_to_redis(redis_conn, key, data):
+            redis_conn.set(key, json.dumps(data))
+
+        def load_from_redis(redis_conn, key):
+            data_bytes = redis_conn.get(key)
+            if data_bytes:
+                data_json = data_bytes.decode('utf-8')
+                return json.loads(data_json)
+            else:
+                return []
+
         api_key, redis_conn, logging = setup_task(key_num)
         redis_key = f'match_data_{key_num}'
         match_data_set = [member.decode() for member in redis_conn.smembers(redis_key)]
-        # match_data_set = redis_conn.smembers(redis_key)
 
         tier_list = []
         match_ids = []
@@ -218,14 +226,17 @@ with DAG(
             tier_list.append(match['tier'])
             match_ids.append(match['matchId'])
 
-        data = {'tier': [], 'match_id': [], 'team_id': [], 'position': [], 'kills': [], 'deaths': [], 'assists': [],
-                'win': [], 'champion_name': [], 'champion_id': [], 'patch': []}
-        total_df = pd.DataFrame(data)
+        all_data_key = f'all_data_{key_num}'
+        all_data = load_from_redis(redis_conn, all_data_key)
+        logging.info(f"all_data{len(all_data)}")
 
         for index, match_id in enumerate(match_ids):
-            # todo  sql matchId로 puuId 찾고, summoner Table에서 puuId 조건 걸면 하나의 행이 나온다.
-            match_details = get_match_details(match_id, api_key)
+            if match_id in [row[1] for row in all_data]:  # 오늘 이미 처리된 match_id는 건너뜁니다.
+                continue
+
             try:
+                logging.info(index)
+                match_details = get_match_details(match_id, api_key)
                 team_id = [participant['teamId'] for participant in match_details['info']['participants']]
                 position = [participant['teamPosition'] for participant in match_details['info']['participants']]
                 kills = [participant['kills'] for participant in match_details['info']['participants']]
@@ -236,29 +247,37 @@ with DAG(
                 champion_id = [participant['championId'] for participant in match_details['info']['participants']]
                 patch = (match_details['info']['gameVersion'])[:5]
 
-                data = {'tier': [], 'match_id': [], 'team_id': [], 'position': [], 'kills': [], 'deaths': [],
-                        'assists': [], 'win': [], 'champion_name': [], 'champion_id': [], 'patch': []}
                 if len(team_id) == 10:
                     for i in range(10):
-                        data['tier'].append(tier_list[index])
-                        data['match_id'].append(match_id)
-                        data['team_id'].append(team_id[i])
-                        data['position'].append(position[i])
-                        data['kills'].append(kills[i])
-                        data['deaths'].append(deaths[i])
-                        data['assists'].append(assists[i])
-                        data['win'].append(win[i])
-                        data['champion_name'].append(champion_name[i])
-                        data['champion_id'].append(champion_id[i])
-                        data['patch'].append(patch)
+                        row = [
+                            tier_list[index],
+                            match_id,
+                            team_id[i],
+                            position[i],
+                            kills[i],
+                            deaths[i],
+                            assists[i],
+                            win[i],
+                            champion_name[i],
+                            champion_id[i],
+                            patch
+                        ]
+                        all_data.append(row)
+                    save_to_redis(redis_conn, all_data_key, all_data)
 
-                    df = pd.DataFrame(data)
-                    total_df = pd.concat([total_df, df], ignore_index=True)
             except KeyError:
-                logging.info("!!")
-                logging.info(match_details['status'])
+                try:
+                    logging.info(match_details['status'])
+                    continue
+                except Exception as e:
+                    logging.info(f"예외가 발생{e}")
+                    continue
             time.sleep(1.2)
 
+        columns = ['tier', 'match_id', 'team_id', 'position', 'kills', 'deaths', 'assists', 'win', 'champion_name',
+                   'champion_id', 'patch']
+        total_df = pd.DataFrame(all_data, columns=columns)
+        redis_conn.delete(all_data_key)
         upload_to_s3(total_df, 'match', key_num)
 
     @task()
@@ -345,8 +364,8 @@ with DAG(
 
     with TaskGroup(group_id='mastery_task_group') as mastery_task_group:
         mastery_task_1 = get_champion_mastery(1)
-        # mastery_task_2 = get_champion_mastery(2)
-        # mastery_task_3 = get_champion_mastery(3)
+        mastery_task_2 = get_champion_mastery(2)
+        mastery_task_3 = get_champion_mastery(3)
 
     delete_redis_key_task = delete_redis_key()
 
