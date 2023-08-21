@@ -38,8 +38,6 @@ x-airflow-common:
     &airflow-common-depends-on
     redis:
       condition: service_healthy
-    medis:
-      condition: service_completed_successfully
     postgres:
       condition: service_healthy
 
@@ -70,13 +68,6 @@ services:
       retries: 50
       start_period: 30s
     restart: always
-
-  medis:
-      image: jamesdbloom/redis-commander
-      environment:
-        - REDIS_HOSTS=local:redis:6379
-      ports:
-        - "8081:8081"
 
   airflow-webserver:
     <<: *airflow-common
