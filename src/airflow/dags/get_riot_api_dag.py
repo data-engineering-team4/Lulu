@@ -227,8 +227,9 @@ with DAG(
             match_ids.append(match['matchId'])
 
         all_data_key = f'all_data_{key_num}'
-        all_data = load_from_redis(redis_conn, all_data_key)
-        logging.info(f"all_data{len(all_data)}")
+        all_data_string = load_from_redis(redis_conn, all_data_key)
+        all_data = json.loads(all_data_string)
+        logging.info(f"🚀all_data:{len(all_data)}")
 
         for index, match_id in enumerate(match_ids):
             if match_id in [row[1] for row in all_data]:  # 오늘 이미 처리된 match_id는 건너뜁니다.
@@ -337,7 +338,7 @@ with DAG(
     def delete_redis_key():
         from utils.common_util import setup_task
         api_key, redis_conn, logging = setup_task(1)
-        for key in range(3):
+        for key in range(1,4):
             summoner_data_key = f"summoner_data_{key}"
             match_data_key = f"match_data_{key}"
 
