@@ -6,11 +6,16 @@ from airflow.utils.task_group import TaskGroup
 from utils.request_limiter import RequestLimiter
 import time
 
-one_second_limiter = RequestLimiter(max_requests=20, per_seconds=1)
-two_minute_limiter = RequestLimiter(max_requests=100, per_seconds=120)
+limiters = {
+    1: (RequestLimiter(max_requests=20, per_seconds=1), RequestLimiter(max_requests=100, per_seconds=120)),
+    2: (RequestLimiter(max_requests=20, per_seconds=1), RequestLimiter(max_requests=100, per_seconds=120)),
+    3: (RequestLimiter(max_requests=20, per_seconds=1), RequestLimiter(max_requests=100, per_seconds=120)),
+}
 
 
-def _wait_for_request():
+def _wait_for_request(key):
+    one_second_limiter, two_minute_limiter = limiters[key]
+
     while True:
         one_second_limiter.wait_for_request_slot()
         two_minute_limiter.wait_for_request_slot()
@@ -54,7 +59,7 @@ with DAG(
             for division in division_list:
                 try:
                     json_data = get_summoner_info_by_tier_division_page(tier, division, page, api_key)
-                    time.sleep(1.2)
+                    _wait_for_request(key_num)
                     for data in json_data:
                         summoner_id = data['summonerId']
 
@@ -80,7 +85,7 @@ with DAG(
         for high_elo in high_elo_list:
             try:
                 json_data = get_high_elo_summoner_info(high_elo, api_key)
-                time.sleep(1.2)
+                _wait_for_request(key_num)
                 json_data_length = len(json_data['entries'])
                 today_start_index = (current_day_of_week * json_data_length) // 7
 
@@ -159,7 +164,7 @@ with DAG(
             summoner['puuid'] = puuid if puuid else None
             if not puuid:
                 logging.error(f"🚀Failed to fetch puuid for {summoner['summoner_name']} after retries, puuid set to None")
-            _wait_for_request()
+            _wait_for_request(key_num)
 
             puuid = summoner['puuid']
 
@@ -180,7 +185,7 @@ with DAG(
                     processed_match_ids.update([match for match in unique_matches])
                     redis_conn.sadd(existing_match, *match_ids_to_add)
                     logging.info(f'🚀{tier} : {len(match_list_by_tier[tier])}')
-            _wait_for_request()
+            _wait_for_request(key_num)
             if all(len(match_list) >= TIER_MATCH_COUNT for match_list in match_list_by_tier.values()):
                 logging.info(f'🚀match_list finished')
                 break
@@ -227,9 +232,9 @@ with DAG(
             match_ids.append(match['matchId'])
 
         all_data_key = f'all_data_{key_num}'
-        all_data_string = load_from_redis(redis_conn, all_data_key)
-        all_data = json.loads(all_data_string)
+        all_data = load_from_redis(redis_conn, all_data_key)
         logging.info(f"🚀all_data:{len(all_data)}")
+        logging.info(f"🚀type:{type(all_data)}")
 
         for index, match_id in enumerate(match_ids):
             if match_id in [row[1] for row in all_data]:  # 오늘 이미 처리된 match_id는 건너뜁니다.
@@ -273,7 +278,7 @@ with DAG(
                 except Exception as e:
                     logging.info(f"예외가 발생{e}")
                     continue
-            time.sleep(1.2)
+            _wait_for_request(key_num)
 
         columns = ['tier', 'match_id', 'team_id', 'position', 'kills', 'deaths', 'assists', 'win', 'champion_name',
                    'champion_id', 'patch']
@@ -329,7 +334,7 @@ with DAG(
 
             df = pd.DataFrame(data)
             total_df = pd.concat([total_df, df], ignore_index=True)
-            time.sleep(1.2)
+            _wait_for_request(key_num)
 
         upload_to_s3(total_df, 'mastery', key_num)
 
@@ -338,7 +343,7 @@ with DAG(
     def delete_redis_key():
         from utils.common_util import setup_task
         api_key, redis_conn, logging = setup_task(1)
-        for key in range(1,4):
+        for key in range(1, 4):
             summoner_data_key = f"summoner_data_{key}"
             match_data_key = f"match_data_{key}"
 
