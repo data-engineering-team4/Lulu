@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="champion-buttons-container">
     <div v-for="(image, index) in images" :key="index" class="champion-button">
       <img :src="selectedImage[index] ? specialImage : image" @click="changeImage(index)" />
     </div>
@@ -35,13 +35,18 @@ export default {
 </script>
 
 <style>
+.champion-buttons-container {
+  display: flex;
+  flex-wrap: wrap;
+}
 .champion-button {
   width: 100px; /* 원하는 크기 */
   height: 100px;
   display: inline-block;
+  flex-basis: 13%;
 }
 .champion-button img {
-  width: 100%;
-  height: 100%;
+  width: 90%;
+  height: 90%;
 }
 </style>
