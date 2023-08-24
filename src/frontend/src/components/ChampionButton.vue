@@ -12,7 +12,7 @@ export default {
   data() {
     return {
       champions: {},
-      specialImage: 'https://ddragon.leagueoflegends.com/cdn/10.6.1/img/champion/Rumble.png',
+      specialImage: 'https://ddragon.leagueoflegends.com/cdn/13.16.1/img/champion/Rumble.png',
       selectedImage: [],
       images: []
     };
@@ -20,6 +20,9 @@ export default {
   methods: {
     changeImage(index) {
       this.selectedImage[index] = !this.selectedImage[index];
+      if (this.selectedImage[index]) {
+      this.$emit('select-champion', this.images[index]);
+      }
     },
   },
   mounted() {
@@ -40,10 +43,10 @@ export default {
   flex-wrap: wrap;
 }
 .champion-button {
-  width: 100px; /* 원하는 크기 */
-  height: 100px;
+  width: 5%;
+  height: 5%;
   display: inline-block;
-  flex-basis: 13%;
+  flex-basis: 14.2%;
 }
 .champion-button img {
   width: 90%;

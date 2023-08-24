@@ -1,12 +1,8 @@
-import { createStore } from 'vuex';
+import { createStore } from 'vuex'
+import box from './box'
 
 export default createStore({
-  state: {
-    selectedImage: null
-  },
-  mutations: {
-    selectImage(state, imageIndex) {
-      state.selectedImage = state.selectedImage === imageIndex ? null : imageIndex;
-    }
+  modules: {
+    box
   }
-});
+})

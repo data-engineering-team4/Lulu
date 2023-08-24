@@ -278,7 +278,8 @@ with DAG(
                 except Exception as e:
                     logging.info(f"예외가 발생{e}")
                     continue
-            _wait_for_request(key_num)
+            finally:
+                _wait_for_request(key_num)
 
         columns = ['tier', 'match_id', 'team_id', 'position', 'kills', 'deaths', 'assists', 'win', 'champion_name',
                    'champion_id', 'patch']
