@@ -85,3 +85,18 @@ def setup_task(key_num):
     redis_conn = redis_hook.get_conn()
 
     return api_key, redis_conn, logging
+
+
+def generate_fernet_key():
+    """
+    Fernet key를 발급 받습니다.
+    """
+    from cryptography.fernet import Fernet
+
+    fernet_key = Fernet.generate_key()
+    return fernet_key.decode()
+
+
+if __name__ == '__main__':
+    # export AIRFLOW__CORE__FERNET_KEY=FERNET_KEY
+    print(generate_fernet_key())
