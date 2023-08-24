@@ -1,19 +1,19 @@
 <template>
   <div class="ban-pick-page">
     <div class="team-section">
-      <div class="team">우리팀</div>
       <div class="lanes">
+        <div class="team">우리팀</div>
         <div v-for="lane in lanes" :key="lane.name" class="lane">
-          <img :src="lane.image" :alt="lane.name" />
+          <img :src="lane.image" :alt="lane.name" class="lane-image" />
         </div>
       </div>
       <div class="champion-buttons">
         <ChampionButton />
       </div>
-      <div class="team">상대팀</div>
       <div class="lanes">
+        <div class="team">상대팀</div>
         <div v-for="lane in lanes" :key="lane.name" class="lane">
-          <img :src="lane.image" :alt="lane.name" />
+          <img :src="lane.image" :alt="lane.name" class="lane-image" />
         </div>
       </div>
     </div>
@@ -55,6 +55,7 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 5% 10%;
 }
 
 .team-section {
@@ -63,8 +64,9 @@ export default {
 }
 
 .team {
-  padding: 20px;
-  font-size: 20px;
+  padding: 50px;
+  font-size: 40px;
+  display: block;
 }
 
 .lanes {
@@ -79,8 +81,15 @@ export default {
   align-items: center;
 }
 
+.lane-image {
+  width: 100%;
+  height: 100%;
+}
+
 .champion-buttons {
   padding: 20px;
+  height: 70vh;
+  overflow-y: scroll;
 }
 
 </style>

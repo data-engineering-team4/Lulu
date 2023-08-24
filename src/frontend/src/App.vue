@@ -1,18 +1,24 @@
 <template>
   <div id="app">
     <router-view/>
+    <div>
+      Selected Image: {{ $store.state.selectedImage }}
+      <button @click="selectImage(1)">Select Image 1</button>
+      <button @click="selectImage(2)">Select Image 2</button>
+    </div>
   </div>
-<!--  <img alt="Vue logo" src="./assets/logo.png">-->
-<!--  <HelloWorld msg="Welcome to Your Vue.js App"/>-->
 </template>
 
 <script>
-// import HelloWorld from './components/HelloWorld.vue'
+import { mapMutations } from 'vuex';
 
 export default {
   name: 'App',
   components: {
-    // HelloWorld
+
+  },
+  methods: {
+    ...mapMutations(['selectImage']),
   }
 }
 </script>
