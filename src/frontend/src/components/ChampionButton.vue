@@ -66,6 +66,7 @@ export default {
   background: #eeeeee;
   box-shadow:  5px 5px 3px #b7b7b7,
                -5px -5px 3px #ffffff;
+  cursor: pointer;
 }
 .champion-button.disabled {
   filter: grayscale(100%);

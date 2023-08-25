@@ -212,6 +212,7 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
 background: #eeeeee;
 box-shadow: inset 5px 5px 3px #b7b7b7,
             inset -5px -5px 3px #ffffff;
+  cursor: pointer;
 }
 .main-section{
   display: flex;
@@ -261,6 +262,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
 
 }
 .submit.enabled {
+  cursor: pointer;
   background-color: #6438af;
   color: #e4d7f5;
 }
@@ -272,6 +274,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
   display: flex;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
 }
 .our-lane-box.selected {
   border: 5px solid #4c00ff;
@@ -284,6 +287,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
   display: flex;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
 }
 .opponent-lane-box.selected {
   border: 5px solid #ff0066;
