@@ -88,3 +88,14 @@ jobs:
       - name: Update service for airflow-web-server
         run: |
           aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-web-server --task-definition ${{ env.TASK_DEFINITION_ARN_WEB_SERVER }}
+
+      - name: Notify Slack
+        if: always()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+          SLACK_USERNAME: Deploy ECR & ECS
+          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
+          SLACK_MESSAGE:
+            ${{ job.status == 'success' ? '🎉 ECR/ECS 배포가 성공했습니다! 🎉': '💣 ECR/ECS 배포가 실패했습니다. 💣' } }
