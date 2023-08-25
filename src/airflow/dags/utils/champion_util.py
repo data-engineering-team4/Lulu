@@ -1,7 +1,6 @@
 import json
 import os
 
-
 def champion_info_extraction():
     """
     1. 챔피언 업데이트때마다  https://developer.riotgames.com/docs/lol champion.json 검색해서 다운 후 champion.json 업데이트
@@ -16,9 +15,7 @@ def champion_info_extraction():
         json_data = file.read()
 
     data = json.loads(json_data)
-    champion_dict = {
-        champion["key"]: champion["name"] for champion in data["data"].values()
-    }
+    champion_dict = {champion["key"]: champion["name"] for champion in data["data"].values()}
     print(len(champion_dict))
 
     with open(champion_dict_path, "w") as file:
