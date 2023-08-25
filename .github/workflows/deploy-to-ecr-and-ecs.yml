@@ -1,0 +1,82 @@
+name: Deploy to Amazon ECR and ECS
+
+on:
+  push:
+    paths:
+      - 'src/airflow/**'
+    branches:
+      - main
+env:
+  AWS_REGION: ap-northeast-3
+  ECR_REPOSITORY: de-4-2-ecr/airflow
+  ECS_CLUSTER: ecs-de-4-2
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f airflow/Dockerfile .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Download task definition for airflow-scheduler
+        run: |
+          aws ecs describe-task-definition --task-definition lulu-airflow-scheduler --query taskDefinition > task-definition-scheduler.json
+
+      - name: Register new task definition for airflow-scheduler
+        id: register-task-definition-scheduler
+        run: |
+          aws ecs register-task-definition --cli-input-json file://task-definition-scheduler.json
+
+      - name: Update service for airflow-scheduler
+        run: |
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-scheduler --task-definition ${{ steps.register-task-definition-scheduler.outputs.taskDefinition.taskDefinitionArn }}
+
+      - name: Download task definition for airflow-worker
+        run: |
+          aws ecs describe-task-definition --task-definition lulu-airflow-worker --query taskDefinition > task-definition-worker.json
+
+      - name: Register new task definition for airflow-worker
+        id: register-task-definition-worker
+        run: |
+          aws ecs register-task-definition --cli-input-json file://task-definition-worker.json
+
+      - name: Update service for airflow-worker
+        run: |
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-worker --task-definition ${{ steps.register-task-definition-worker.outputs.taskDefinition.taskDefinitionArn }}
+
+      - name: Download task definition for airflow-web-server
+        run: |
+          aws ecs describe-task-definition --task-definition lulu-airflow-web-server --query taskDefinition > task-definition-web-server.json
+
+      - name: Register new task definition for airflow-web-server
+        id: register-task-definition-web-server
+        run: |
+          aws ecs register-task-definition --cli-input-json file://task-definition-web-server.json
+
+      - name: Update service for airflow-web-server
+        run: |
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-web-server --task-definition ${{ steps.register-task-definition-web-server.outputs.taskDefinition.taskDefinitionArn }}
