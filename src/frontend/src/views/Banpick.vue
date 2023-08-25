@@ -27,13 +27,13 @@
           </div>
           <div class="main-section">
             <div class="our-team-section" @mousedown="selectOurTeam" @mouseup="unselectTeams" @mouseleave="unselectTeams">
-            <h2 :style="{ color: ourTeamSelected ? '#4c00ff' : '#b899ff' }" :class="[ourTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">우리팀</h2>
+            <h2 :style="{ color: ourTeamSelected ? '#4c00ff' : '#b899ff' }" :class="[ourTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">&nbsp;&nbsp;&nbsp;우리팀</h2>
           <div v-for="(box, index) in our_boxes" :key="box" @click="selectBox(box)" :class="['our-lane-box', box === selectedBox ? 'selected' : '', 'our-neumorphism-style'] ">
             <img v-if="boxImages[index]" :src="boxImages[index]" alt="Champion Image" class="lane-img"/>
           </div>
         </div>
         <div class="champion-secction">
-          <h1 class="custom-font" style="color: #9752ff;">챔피언을 선택하세요!</h1>
+          <h2 class="custom-font" style="color: #9752ff;">챔피언을 선택하세요!</h2>
           <div class="champion-buttons-husks">
           <div class="champion-buttons">
             <ChampionButton :selectedChampionIndex="selectedChampionIndex" :disabledChampions="disabledChampions" @select-champion="selectChampion"/>
@@ -44,11 +44,26 @@
           </div>
         </div>
         <div class="opponent-team-section" @mousedown="selectOpponentTeam" @mouseup="unselectTeams" @mouseleave="unselectTeams">
-          <h2 :style="{ color: opponentTeamSelected ? '#ff0066' : '#ffadce' }" :class="[opponentTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">상대팀</h2>
+          <h2 :style="{ color: opponentTeamSelected ? '#ff0066' : '#ffadce' }" :class="[opponentTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">상대팀&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h2>
           <div v-for="(box, index) in opponent_boxes" :key="box" @click="selectBox(box)" :class="['opponent-lane-box', box === selectedBox ? 'selected' : '', 'opponent-neumorphism-style']">
             <img v-if="boxImages[index+5]" :src="boxImages[index+5]" alt="Champion Image" class="lane-img"/>
           </div>
         </div>
+          </div>
+          <div class="right-section">
+            <div class="recommend-section">
+              <div class="recommend-section-mastery">d</div>
+              <div class="recommend-section-table">
+                <div class="recommend-section-first">
+                  <div class="recommend-section-opponent-lane"></div>
+                  <div class="recommend-section-our-team"></div>
+                </div>
+                <div class="recommend-section-second">
+                  <div class="recommend-section-entire"></div>
+                  <div class="recommend-section-final"></div>
+                </div>
+              </div>
+            </div>
           </div>
       </div>
       </div>
@@ -201,7 +216,7 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
 .main-section{
   display: flex;
   align-items: flex-start;
-  width: 50vw;
+  width: 44vw;
   margin-left: 1%;
   margin-right: 2%;
   margin-bottom: 4%;
@@ -219,14 +234,15 @@ box-shadow:  5px 5px 3px #b7b7b7,
 }
 
 .our-team-section {
-  width: 20%;
+  width: 15%;
   height: 80%;
+
   display: block;
   justify-content: center;
 }
 
 .opponent-team-section {
-  width: 20%;
+  width: 15%;
   height: 100%;
   display: block;
   justify-content: center;
@@ -236,7 +252,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
   width: 15vw;
   height: 3vw;
   margin-top: 5vh;
-  font-size: x-large;
+  font-size: large;
   border: 0px;
 border-radius: 25px;
 background: #eeeeee;
@@ -264,7 +280,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
 .opponent-lane-box {
   height: 10vh;
   width: 5vw;
-  margin: 10% 20% 0% 0%;
+  margin: 10% 0% 0% 0%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -285,8 +301,8 @@ box-shadow:  5px 5px 3px #b7b7b7,
   border-radius: 25px;
   padding-top: 3%;
 background: #eeeeee;
-box-shadow:  5px 5px 3px #b7b7b7,
-             -5px -5px 3px #ffffff;
+box-shadow: inset 5px 5px 3px #b7b7b7,
+            inset -5px -5px 3px #ffffff;
 }
 
 .champion-buttons {
@@ -315,6 +331,69 @@ box-shadow:  5px 5px 3px #b7b7b7,
   &::-webkit-scrollbar-thumb:hover {
     background: #9752ff; /* 스크롤바 마우스 오버 색 */
   }
+}
+
+.right-section{
+  display: flex;
+  height: 70vh;
+  padding-left: 0%;
+  justify-content: center;
+}
+.recommend-section{
+  width: 25vw;
+  height: 100%;
+  //background-color: black;
+  justify-content: center;
+
+}
+.recommend-section-mastery{
+  width: 25vw;
+  height: 30%;
+  margin-bottom: 7%;
+  justify-content: center;
+  border-radius: 25px;
+  background: #eeeeee;
+  box-shadow:  5px 5px 3px #b7b7b7,
+               -5px -5px 3px #ffffff;
+
+}
+.recommend-section-table{
+  width: 25vw;
+  height: 60%;
+  margin-bottom: 7%;
+  justify-content: center;
+  border-radius: 25px;
+  background: #eeeeee;
+box-shadow: inset 5px 5px 3px #b7b7b7,
+            inset -5px -5px 3px #ffffff;
+}
+
+.recommend-section-first{
+  width: 25vw;
+  height: 50%;
+  display: flex;
+  justify-content: center;
+}
+.recommend-section-second{
+  width: 25vw;
+  height: 50%;
+  display: flex;
+  justify-content: center;
+}
+.recommend-section-opponent-lane{
+  width: 45%;
+  background: #eeeeee;
+  box-shadow:  5px 5px 3px #b7b7b7,
+               -5px -5px 3px #ffffff;
+  margin-right: 3%;
+  margin-top: 3%;
+}
+.recommend-section-our-team{
+  width: 45%;
+  background: #eeeeee;
+  box-shadow:  5px 5px 3px #b7b7b7,
+               -5px -5px 3px #ffffff;
+  margin-top: 3%;
 }
 
 .our-neumorphism-style:active {
