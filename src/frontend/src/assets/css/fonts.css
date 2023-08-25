@@ -1,0 +1,9 @@
+@font-face {
+  font-family: 'Doctum Bold';
+  src: url('../fonts/KoPub Dotum Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Doctum Light';
+  src: url('../fonts/KoPub Dotum Light.ttf') format('truetype');
+}
