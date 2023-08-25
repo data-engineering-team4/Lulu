@@ -1,28 +1,39 @@
 <template>
   <div class="ban-pick">
-    <h1 style="color: beige">BanPick</h1>
     <div class="ban-pick-page">
-      <div class="section">
-        <div class="our-team-section">
-          <h2 style="color: #4896ea;">우리팀</h2>
-          <div v-for="(box, index) in our_boxes" :key="box" @click="selectBox(box)" :style="{border: box === selectedBox ? '6px solid red' : ''}" class="lane-box" >
-            <img :src="boxImages[index] || emptyBoxImage" alt="빈 상자" class="lane-img"/>
+      <div class="ban-pick-board">
+        <div class="title-section">
+         <div class="custom-light-font" style="display: inline-block;">BanPick&nbsp;</div>
+         <div class="custom-font" style="display: inline-block;">DashBoard</div>
+        </div>
+        <div class="section">
+          <div class="left-section">
+          추천해줄곳 or 밴
+          </div>
+          <div class="main-section">
+            <div class="our-team-section" @mousedown="selectOurTeam" @mouseup="unselectTeams" @mouseleave="unselectTeams">
+            <h2 :style="{ color: ourTeamSelected ? '#4c00ff' : '#b899ff' }" :class="[ourTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">우리팀</h2>
+          <div v-for="(box, index) in our_boxes" :key="box" @click="selectBox(box)" :class="['our-lane-box', box === selectedBox ? 'selected' : '', 'our-neumorphism-style'] ">
+            <img v-if="boxImages[index]" :src="boxImages[index]" alt="Champion Image" class="lane-img"/>
           </div>
         </div>
         <div class="champion-secction">
+          <h1 class="custom-font" style="color: #9752ff;">챔피언을 선택하세요!</h1>
           <div class="champion-buttons">
             <ChampionButton :selectedChampions="selectedChampions" @select-champion="selectChampion" :selectedChampionIndex="selectedChampionIndex"/>
           </div>
           <div>
-            <button @click="submit" class="submit" :class="{ 'enabled': isSubmitEnabled }" :disabled="!isSubmitEnabled">챔피언 선택</button>
+            <button @click="submit" class="submit neumorphism-style" :class="{ 'enabled': isSubmitEnabled }" :disabled="!isSubmitEnabled">챔피언 선택</button>
           </div>
         </div>
-        <div class="opponent-team-section">
-          <h2 style="color: #ea494c;">상대팀</h2>
-          <div v-for="(box, index) in opponent_boxes" :key="box" @click="selectBox(box)" :style="{border: box === selectedBox ? '6px solid red' : ''}" class="lane-box">
-            <img :src="boxImages[index+5] || emptyBoxImage" alt="빈 상자" class="lane-img"/>
+        <div class="opponent-team-section" @mousedown="selectOpponentTeam" @mouseup="unselectTeams" @mouseleave="unselectTeams">
+          <h2 :style="{ color: opponentTeamSelected ? '#ff0066' : '#ffadce' }" :class="[opponentTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">상대팀</h2>
+          <div v-for="(box, index) in opponent_boxes" :key="box" @click="selectBox(box)" :class="['opponent-lane-box', box === selectedBox ? 'selected' : '', 'opponent-neumorphism-style']">
+            <img v-if="boxImages[index+5]" :src="boxImages[index+5]" alt="Champion Image" class="lane-img"/>
           </div>
         </div>
+          </div>
+      </div>
       </div>
     </div>
   </div>
@@ -39,15 +50,16 @@ export default {
   },
   data() {
     return {
+      ourTeamSelected: false,
+      opponentTeamSelected: false,
       our_boxes: [1, 2, 3, 4, 5],
       opponent_boxes: [6, 7, 8, 9, 10],
-      emptyBoxImage: require('@/assets/black.png'),
-      // selectedChampions: Array(164).fill(false),
       selectedChampionIndex: null,
+      boxImages: Array(10).fill(null),
     };
   },
   computed: {
-    ...mapState('box', ['selectedBox', 'selectedImage', 'boxImages']),
+    ...mapState('box', ['selectedBox', 'selectedImage']),
     isSubmitEnabled() {
       return this.selectedBox && this.selectedImage;
     }
@@ -56,17 +68,28 @@ export default {
     selectChampion(imageUrl, index) {
       this.selectedChampionIndex = index;
       this.setSelectedImage(imageUrl);
-       // console.log('Selected Champion Index:', this.selectedChampionIndex); // 로그 출력
-      // this.selectedChampions[index+2] = true;
     },
-    ...mapMutations('box', ['setSelectedBox', 'setSelectedImage', 'insertImageToBox']),
+    ...mapMutations('box', ['setSelectedBox', 'setSelectedImage']),
     selectBox(box) {
       this.setSelectedBox(box)
     },
+    selectOurTeam() {
+      this.ourTeamSelected = true;
+      this.opponentTeamSelected = false;
+    },
+    selectOpponentTeam() {
+      this.ourTeamSelected = false;
+      this.opponentTeamSelected = true;
+    },
+    unselectTeams() {
+      this.ourTeamSelected = false;
+      this.opponentTeamSelected = false;
+    },
     submit() {
       if (this.selectedBox && this.selectedImage) {
-        this.insertImageToBox();
-        // this.selectedChampions = null;
+        this.boxImages[this.selectedBox - 1] = this.selectedImage;
+        this.setSelectedBox(null);
+        this.setSelectedImage(null);
       } else {
         alert('?!!!')
       }
@@ -74,26 +97,72 @@ export default {
   },
 };
 </script>
+<style scoped>
+@import "@/assets/css/fonts.css";
+.custom-font {
+  font-family: 'Doctum Bold', sans-serif;
+}
+.custom-light-font {
+  font-family: 'Doctum Light', sans-serif;
+}
+</style>
+
 <style>
 .ban-pick {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #252e41
+  background-color: #9752ff
 }
 
 .ban-pick-page {
+  margin-top: 3%;
   align-items: center;
+  width: 80%;
+  height: 100%;
+}
+
+.ban-pick-board{
+  height: 90%;
+  border-radius: 20px;
+  background: #eeeeee;
+  box-shadow:  20px 20px 10px #6438af,
+               -1px -1px 2px #ffffff;
+}
+.title-section {
+  display: block;
+  text-align: left;
+  padding: 2% 0% 0% 3%;
+  font-size: 30px;
+  font-weight: 500;
+  color: #9752ff;
 }
 
 .section {
   display: flex;
   align-items: flex-start;
-  height: 80%;
+  margin: 2%;
+  }
+.left-section{
+  display: flex;
+  width: 10vw;
+  height: 10vh;
+  //background-color: black;
 }
-
+.main-section{
+  display: flex;
+  align-items: flex-start;
+  width: 60vw;
+  margin-left: 10%;
+  margin-right: 2%;
+  margin-bottom: 4%;
+border-radius: 25px;
+background: #eeeeee;
+box-shadow:  5px 5px 3px #b7b7b7,
+             -5px -5px 3px #ffffff;
+}
 .champion-secction{
-  margin: 10% 2% 0% 0%;
+  margin: 1% 3% 3% 1%;
   width: 40vw;
 }
 
@@ -113,30 +182,81 @@ export default {
   height: 3vw;
   margin-top: 5vh;
   font-size: x-large;
-  background-color: #ccc;
+border-radius: 25px;
+background: #eeeeee;
+box-shadow:  5px 5px 3px #b7b7b7,
+             -5px -5px 3px #ffffff;
 }
 .submit.enabled {
   background-color: #4896ea;
 }
 
-.lane-box {
-  height: 100%;
-  width: 100%;
-  margin: 0px;
-  object-fit: fill;
+.our-lane-box {
+  height: 10vh;
+  width: 6vw;
+  margin: 5% 0px 0% 20%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.our-lane-box.selected {
+  border: 5px solid blue;
+}
+
+.opponent-lane-box {
+  height: 10vh;
+  width: 6vw;
+  margin: 5% 20% 0% 0%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.opponent-lane-box.selected {
+  border: 5px solid red;
 }
 
 .lane-img {
   height: 40%;
   width: 100%;
-  object-fit: fill;
+  object-fit: contain;
+  border-radius: 20px;
 }
 
 .champion-buttons {
-  height: 55vh;
+  height: 40vh;
   overflow-y: scroll;
   display: block;
   justify-content: center;
+  padding: 3% 0% 3% 0%;
+  width: 40vw;
+border-radius: 25px;
+background: #eeeeee;
+box-shadow:  5px 5px 3px #b7b7b7,
+             -5px -5px 3px #ffffff;
+}
+
+.our-neumorphism-style:active {
+  box-shadow: inset 5px 5px 10px #d1d1d1, inset -5px -5px 10px #ffffff;
+  border: 2px solid blue;
+}
+
+.opponent-neumorphism-style:active {
+  box-shadow: inset 5px 5px 10px #d1d1d1, inset -5px -5px 10px #ffffff;
+  border: 2px solid red;
+}
+
+.our-neumorphism-style {
+border-radius: 25px;
+background: #eeeeee;
+box-shadow:  5px 5px 3px #b7b7b7,
+             -5px -5px 3px #ffffff;
+}
+
+.opponent-neumorphism-style {
+border-radius: 25px;
+background: #eeeeee;
+box-shadow:  5px 5px 3px #b7b7b7,
+             -5px -5px 3px #ffffff;
 }
 
 </style>
