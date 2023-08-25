@@ -19,9 +19,11 @@
         </div>
         <div class="champion-secction">
           <h1 class="custom-font" style="color: #9752ff;">챔피언을 선택하세요!</h1>
+          <div class="champion-buttons-husks">
           <div class="champion-buttons">
             <ChampionButton :selectedChampionIndex="selectedChampionIndex" :disabledChampions="disabledChampions" @select-champion="selectChampion"/>
           </div>
+            </div>
           <div>
             <button @click="submit" class="submit neumorphism-style" :class="{ 'enabled': isSubmitEnabled }" :disabled="!isSubmitEnabled">챔피언 선택</button>
           </div>
@@ -230,18 +232,41 @@ box-shadow:  5px 5px 3px #b7b7b7,
   object-fit: contain;
   border-radius: 20px;
 }
-
-.champion-buttons {
-  height: 40vh;
-  overflow-y: scroll;
-  display: block;
-  justify-content: center;
-  padding: 3% 0% 3% 0%;
-  width: 40vw;
-border-radius: 25px;
+.champion-buttons-husks{
+  height: 46vh;
+    width: 33vw;
+  border-radius: 25px;
+  padding-top: 3%;
 background: #eeeeee;
 box-shadow:  5px 5px 3px #b7b7b7,
              -5px -5px 3px #ffffff;
+}
+
+.champion-buttons {
+  height: 37vh;
+  overflow-y: scroll;
+  display: block;
+  justify-content: center;
+  padding: 0% 0% 5% 0%;
+  width: 33vw;
+
+
+  &::-webkit-scrollbar {
+    width: 10px; /* 스크롤바 너비 */
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #eeeeee; /* 스크롤바 배경색 */
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888; /* 스크롤바 색 */
+    border-radius: 8px; /* 둥근 모서리 */
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #9752ff; /* 스크롤바 마우스 오버 색 */
+  }
 }
 
 .our-neumorphism-style:active {
