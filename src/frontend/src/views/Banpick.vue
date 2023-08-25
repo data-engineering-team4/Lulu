@@ -57,6 +57,7 @@ export default {
       selectedChampionIndex: null,
       boxImages: Array(10).fill(null),
       disabledChampions: [],
+      boxChampionIndices: Array(10).fill(null),
     };
   },
   computed: {
@@ -66,14 +67,17 @@ export default {
     }
   },
   methods: {
+    // ...mapMutations('box', ['setSelectedBox']),
+    ...mapMutations('box', ['setSelectedBox', 'setSelectedImage']),
+
     selectChampion(imageUrl, index) {
       if (this.disabledChampions.includes(index)) return;
       this.selectedChampionIndex = index;
       this.setSelectedImage(imageUrl);
     },
-    ...mapMutations('box', ['setSelectedBox', 'setSelectedImage']),
     selectBox(box) {
-      this.setSelectedBox(box)
+      this.disabledChampions = this.disabledChampions.filter(i => i !== this.boxChampionIndices[box - 1]);
+      this.setSelectedBox(box);
     },
     selectOurTeam() {
       this.ourTeamSelected = true;
@@ -90,6 +94,7 @@ export default {
     submit() {
       if (this.selectedBox && this.selectedImage) {
         this.boxImages[this.selectedBox - 1] = this.selectedImage;
+        this.boxChampionIndices[this.selectedBox - 1] = this.selectedChampionIndex;
         this.setSelectedBox(null);
         this.setSelectedImage(null);
         this.disabledChampions.push(this.selectedChampionIndex);
