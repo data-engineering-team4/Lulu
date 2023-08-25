@@ -4,11 +4,26 @@
       <div class="ban-pick-board">
         <div class="title-section">
          <div class="custom-light-font" style="display: inline-block;">BanPick&nbsp;</div>
-         <div class="custom-font" style="display: inline-block;">DashBoard</div>
+         <div class="custom-font" style="display: inline-block;">DashBoard&nbsp;&nbsp;&nbsp;</div>
+          <div class="real-time custom-light-font">&nbsp;&nbsp;&nbsp;real-time&nbsp;recommend&nbsp;&nbsp;&nbsp;&nbsp;</div>
         </div>
         <div class="section">
           <div class="left-section">
-          추천해줄곳 or 밴
+            <div class="lane-circle" style="margin-top: 75%">
+              <img src="@/assets/top.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
+            </div>
+            <div class="lane-circle">
+              <img src="@/assets/jug.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
+            </div>
+            <div class="lane-circle">
+              <img src="@/assets/mid.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
+            </div>
+            <div class="lane-circle">
+              <img src="@/assets/bottom.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
+            </div>
+            <div class="lane-circle">
+              <img src="@/assets/sup.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
+            </div>
           </div>
           <div class="main-section">
             <div class="our-team-section" @mousedown="selectOurTeam" @mouseup="unselectTeams" @mouseleave="unselectTeams">
@@ -25,7 +40,7 @@
           </div>
             </div>
           <div>
-            <button @click="submit" class="submit neumorphism-style" :class="{ 'enabled': isSubmitEnabled }" :disabled="!isSubmitEnabled">챔피언 선택</button>
+            <button @click="submit" class="submit custom-font" :class="{ 'enabled': isSubmitEnabled }" :disabled="!isSubmitEnabled">챔피언 선택</button>
           </div>
         </div>
         <div class="opponent-team-section" @mousedown="selectOpponentTeam" @mouseup="unselectTeams" @mouseleave="unselectTeams">
@@ -148,93 +163,125 @@ export default {
   font-weight: 500;
   color: #9752ff;
 }
-
+.real-time{
+  display: inline-block;
+  font-size: 20px;
+  border-radius: 25px;
+background: #eeeeee;
+box-shadow: inset 5px 5px 3px #b7b7b7,
+            inset -5px -5px 3px #ffffff;
+  padding: 5px;
+}
 .section {
   display: flex;
   align-items: flex-start;
   margin: 2%;
   }
 .left-section{
+  display: block;
+  width: 5vw;
+  height: 100%;
+  padding-left: 0%;
+  justify-content: center;
+}
+.lane-circle{
+  width: 4vw;
+  height: 8vh;
   display: flex;
-  width: 10vw;
-  height: 10vh;
-  //background-color: black;
+  justify-content: center;
+  align-items: center;
+  margin-left: auto;
+  margin-top: 40%;
+  margin-right: 5%;
+  border-radius: 50%;
+background: #eeeeee;
+box-shadow: inset 5px 5px 3px #b7b7b7,
+            inset -5px -5px 3px #ffffff;
 }
 .main-section{
   display: flex;
   align-items: flex-start;
-  width: 60vw;
-  margin-left: 10%;
+  width: 50vw;
+  margin-left: 1%;
   margin-right: 2%;
   margin-bottom: 4%;
 border-radius: 25px;
 background: #eeeeee;
 box-shadow:  5px 5px 3px #b7b7b7,
              -5px -5px 3px #ffffff;
+  justify-content: center;
+
 }
 .champion-secction{
   margin: 1% 3% 3% 1%;
-  width: 40vw;
+  width: 28vw;
+
 }
 
 .our-team-section {
   width: 20%;
   height: 80%;
   display: block;
+  justify-content: center;
 }
 
 .opponent-team-section {
   width: 20%;
   height: 100%;
   display: block;
+  justify-content: center;
+
 }
 .submit {
   width: 15vw;
   height: 3vw;
   margin-top: 5vh;
   font-size: x-large;
+  border: 0px;
 border-radius: 25px;
 background: #eeeeee;
 box-shadow:  5px 5px 3px #b7b7b7,
              -5px -5px 3px #ffffff;
+
 }
 .submit.enabled {
-  background-color: #4896ea;
+  background-color: #6438af;
+  color: #e4d7f5;
 }
 
 .our-lane-box {
   height: 10vh;
-  width: 6vw;
-  margin: 5% 0px 0% 20%;
+  width: 5vw;
+  margin: 10% 0px 0% 20%;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 .our-lane-box.selected {
-  border: 5px solid blue;
+  border: 5px solid #4c00ff;
 }
 
 .opponent-lane-box {
   height: 10vh;
-  width: 6vw;
-  margin: 5% 20% 0% 0%;
+  width: 5vw;
+  margin: 10% 20% 0% 0%;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 .opponent-lane-box.selected {
-  border: 5px solid red;
+  border: 5px solid #ff0066;
 }
 
 .lane-img {
-  height: 40%;
+  height: 70%;
   width: 100%;
   object-fit: contain;
   border-radius: 20px;
 }
 .champion-buttons-husks{
   height: 46vh;
-    width: 33vw;
+    width: 28vw;
   border-radius: 25px;
   padding-top: 3%;
 background: #eeeeee;
@@ -243,12 +290,13 @@ box-shadow:  5px 5px 3px #b7b7b7,
 }
 
 .champion-buttons {
-  height: 37vh;
+  height: 40vh;
   overflow-y: scroll;
   display: block;
   justify-content: center;
   padding: 0% 0% 5% 0%;
-  width: 33vw;
+  width: 28vw;
+  justify-content: center;
 
 
   &::-webkit-scrollbar {
@@ -271,12 +319,12 @@ box-shadow:  5px 5px 3px #b7b7b7,
 
 .our-neumorphism-style:active {
   box-shadow: inset 5px 5px 10px #d1d1d1, inset -5px -5px 10px #ffffff;
-  border: 2px solid blue;
+  border: 2px solid #4c00ff;
 }
 
 .opponent-neumorphism-style:active {
   box-shadow: inset 5px 5px 10px #d1d1d1, inset -5px -5px 10px #ffffff;
-  border: 2px solid red;
+  border: 2px solid #ff0066;
 }
 
 .our-neumorphism-style {
