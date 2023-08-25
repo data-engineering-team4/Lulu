@@ -1,21 +1,24 @@
 name: code_quality_check
 
 on:
+  push:
+    branches:
+      - '**' # 모든 브랜치에서 push 이벤트가 발생할 때 실행
   pull_request:
     branches: [ "main", "develop" ]
 
 jobs:
-  build:
+  code-check:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python 3.10
+    - name: Set up Python
       uses: actions/setup-python@v3
       with:
-        python-version: 3.10
+        python-version: "3.x"
 
     - name: Install dependencies
       run: |
@@ -33,9 +36,18 @@ jobs:
 
     - name: Lint with flake8
       run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exit-zero --max-complexity=10 --max-line-length=127
 
     - name: Test with unittest
       run: |
         python -m unittest discover -p "test*.py"
+
+    - name: Notify Slack
+      if: failure()
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+        SLACK_USERNAME: GitHub CI
+        SLACK_COLOR: ${{ job.status }}
+        SLACK_MESSAGE: '💣 CI 테스트가 실패했습니다. 💣'
