@@ -47,10 +47,10 @@ jobs:
         run: |
           aws ecs describe-task-definition --task-definition lulu-airflow-scheduler --query taskDefinition > task-definition-scheduler.json
 
-      - name: Register new task definition for airflow-scheduler
-        id: register-task-definition-scheduler
+      - name: Modify and Register new task definition for airflow-scheduler
         run: |
-          aws ecs register-task-definition --cli-input-json file://task-definition-scheduler.json
+          jq '.containerDefinitions[0].image = env.ECR_REGISTRY + "/" + env.ECR_REPOSITORY + ":" + env.IMAGE_TAG | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-scheduler.json > modified-task-definition.json
+          aws ecs register-task-definition --cli-input-json file://modified-task-definition.json
 
       - name: Update service for airflow-scheduler
         run: |
@@ -60,10 +60,10 @@ jobs:
         run: |
           aws ecs describe-task-definition --task-definition lulu-airflow-worker --query taskDefinition > task-definition-worker.json
 
-      - name: Register new task definition for airflow-worker
-        id: register-task-definition-worker
+      - name: Modify and Register new task definition for airflow-worker
         run: |
-          aws ecs register-task-definition --cli-input-json file://task-definition-worker.json
+          jq '.containerDefinitions[0].image = env.ECR_REGISTRY + "/" + env.ECR_REPOSITORY + ":" + env.IMAGE_TAG | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-worker.json > modified-task-definition-worker.json
+          aws ecs register-task-definition --cli-input-json file://modified-task-definition-worker.json
 
       - name: Update service for airflow-worker
         run: |
@@ -73,10 +73,10 @@ jobs:
         run: |
           aws ecs describe-task-definition --task-definition lulu-airflow-web-server --query taskDefinition > task-definition-web-server.json
 
-      - name: Register new task definition for airflow-web-server
-        id: register-task-definition-web-server
+      - name: Modify and Register new task definition for airflow-web-server
         run: |
-          aws ecs register-task-definition --cli-input-json file://task-definition-web-server.json
+          jq '.containerDefinitions[0].image = env.ECR_REGISTRY + "/" + env.ECR_REPOSITORY + ":" + env.IMAGE_TAG | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-web-server.json > modified-task-definition-web-server.json
+          aws ecs register-task-definition --cli-input-json file://modified-task-definition-web-server.json
 
       - name: Update service for airflow-web-server
         run: |
