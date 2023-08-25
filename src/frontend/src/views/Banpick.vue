@@ -9,31 +9,31 @@
         </div>
         <div class="section">
           <div class="left-section">
-            <div class="lane-circle" style="margin-top: 75%">
-              <img src="@/assets/top.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
-            </div>
-            <div class="lane-circle">
-              <img src="@/assets/jug.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
-            </div>
-            <div class="lane-circle">
-              <img src="@/assets/mid.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
-            </div>
-            <div class="lane-circle">
+            <div class="lane-circle" :style="{ 'margin-top': '12vh', filter: laneCircles[0] ? 'hue-rotate(167deg)' : 'hue-rotate(360deg)' }" @click="selectCircle(0)">
               <img src="@/assets/bottom.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
             </div>
-            <div class="lane-circle">
+            <div class="lane-circle" :style="{ filter: laneCircles[1] ? 'hue-rotate(167deg)' : 'hue-rotate(360deg)' }" @click="selectCircle(1)">
+              <img src="@/assets/jug.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
+            </div>
+            <div class="lane-circle" :style="{ filter: laneCircles[2] ? 'hue-rotate(167deg)' : 'hue-rotate(360deg)' }" @click="selectCircle(2)">
+              <img src="@/assets/mid.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
+            </div>
+            <div class="lane-circle" :style="{ filter: laneCircles[3] ? 'hue-rotate(167deg)' : 'hue-rotate(360deg)' }" @click="selectCircle(3)">
+              <img src="@/assets/top.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
+            </div>
+            <div class="lane-circle" :style="{ filter: laneCircles[4] ? 'hue-rotate(167deg)' : 'hue-rotate(360deg)' }" @click="selectCircle(4)">
               <img src="@/assets/sup.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
             </div>
           </div>
           <div class="main-section">
-            <div class="our-team-section" @mousedown="selectOurTeam" @mouseup="unselectTeams" @mouseleave="unselectTeams">
+            <div class="our-team-section" @click="toggleOurTeamSelection">
             <h2 :style="{ color: ourTeamSelected ? '#4c00ff' : '#b899ff' }" :class="[ourTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">&nbsp;&nbsp;&nbsp;우리팀</h2>
           <div v-for="(box, index) in our_boxes" :key="box" @click="selectBox(box)" :class="['our-lane-box', box === selectedBox ? 'selected' : '', 'our-neumorphism-style'] ">
             <img v-if="boxImages[index]" :src="boxImages[index]" alt="Champion Image" class="lane-img"/>
           </div>
         </div>
         <div class="champion-secction">
-          <h2 class="custom-font" style="color: #9752ff;">챔피언을 선택하세요!</h2>
+          <h5 class="custom-font" style="color: #9752ff; margin-top: 13.5%; margin-bottom: 1%">챔피언을 선택하세요!</h5>
           <div class="champion-buttons-husks">
           <div class="champion-buttons">
             <ChampionButton :selectedChampionIndex="selectedChampionIndex" :disabledChampions="disabledChampions" @select-champion="selectChampion"/>
@@ -43,9 +43,9 @@
             <button @click="submit" class="submit custom-font" :class="{ 'enabled': isSubmitEnabled }" :disabled="!isSubmitEnabled">챔피언 선택</button>
           </div>
         </div>
-        <div class="opponent-team-section" @mousedown="selectOpponentTeam" @mouseup="unselectTeams" @mouseleave="unselectTeams">
-          <h2 :style="{ color: opponentTeamSelected ? '#ff0066' : '#ffadce' }" :class="[opponentTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">상대팀&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h2>
-          <div v-for="(box, index) in opponent_boxes" :key="box" @click="selectBox(box)" :class="['opponent-lane-box', box === selectedBox ? 'selected' : '', 'opponent-neumorphism-style']">
+            <div class="opponent-team-section" @click="toggleOpponentTeamSelection">
+              <h2 :style="{ color: opponentTeamSelected ? '#ff0066' : '#b899ff' }" :class="[opponentTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">상대팀&nbsp;&nbsp;&nbsp;&nbsp;</h2>
+              <div v-for="(box, index) in opponent_boxes" :key="box" @click="selectBox(box)" :class="['opponent-lane-box', box === selectedBox ? 'selected' : '', 'opponent-neumorphism-style']">
             <img v-if="boxImages[index+5]" :src="boxImages[index+5]" alt="Champion Image" class="lane-img"/>
           </div>
         </div>
@@ -90,6 +90,7 @@ export default {
       boxImages: Array(10).fill(null),
       disabledChampions: [],
       boxChampionIndices: Array(10).fill(null),
+      laneCircles: Array(5).fill(false),
     };
   },
   computed: {
@@ -111,17 +112,16 @@ export default {
       this.disabledChampions = this.disabledChampions.filter(i => i !== this.boxChampionIndices[box - 1]);
       this.setSelectedBox(box);
     },
-    selectOurTeam() {
+    toggleOurTeamSelection() {
       this.ourTeamSelected = true;
       this.opponentTeamSelected = false;
     },
-    selectOpponentTeam() {
+    toggleOpponentTeamSelection() {
       this.ourTeamSelected = false;
       this.opponentTeamSelected = true;
     },
-    unselectTeams() {
-      this.ourTeamSelected = false;
-      this.opponentTeamSelected = false;
+    selectCircle(index) {
+      this.laneCircles = this.laneCircles.map((selected, idx) => idx === index);
     },
     submit() {
       if (this.selectedBox && this.selectedImage) {
@@ -206,7 +206,7 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
   justify-content: center;
   align-items: center;
   margin-left: auto;
-  margin-top: 40%;
+  margin-top: 32%;
   margin-right: 5%;
   border-radius: 50%;
 background: #eeeeee;
@@ -223,6 +223,7 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
   margin-bottom: 4%;
 border-radius: 25px;
 background: #eeeeee;
+  //background: #f4f0fc;
 box-shadow:  5px 5px 3px #b7b7b7,
              -5px -5px 3px #ffffff;
   justify-content: center;
@@ -237,7 +238,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
 .our-team-section {
   width: 15%;
   height: 80%;
-
+  margin-top: 5%;
   display: block;
   justify-content: center;
 }
@@ -245,6 +246,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
 .opponent-team-section {
   width: 15%;
   height: 100%;
+  margin-top: 5%;
   display: block;
   justify-content: center;
 
@@ -252,11 +254,12 @@ box-shadow:  5px 5px 3px #b7b7b7,
 .submit {
   width: 15vw;
   height: 3vw;
-  margin-top: 5vh;
+  margin-top: 2vh;
   font-size: large;
   border: 0px;
 border-radius: 25px;
-background: #eeeeee;
+//background: #eeeeee;
+  background: #dddddd;
 box-shadow:  5px 5px 3px #b7b7b7,
              -5px -5px 3px #ffffff;
 
@@ -303,6 +306,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
   height: 46vh;
     width: 28vw;
   border-radius: 25px;
+  //margin-top: 18%;
   padding-top: 3%;
 background: #eeeeee;
 box-shadow: inset 5px 5px 3px #b7b7b7,
@@ -415,6 +419,7 @@ border-radius: 25px;
 background: #eeeeee;
 box-shadow:  5px 5px 3px #b7b7b7,
              -5px -5px 3px #ffffff;
+
 }
 
 .opponent-neumorphism-style {

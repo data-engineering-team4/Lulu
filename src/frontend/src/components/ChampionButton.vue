@@ -1,7 +1,7 @@
 <template>
   <div class="champion-buttons-container">
     <div v-for="(image, index) in images" :key="index" class="champion-button" :class="{ disabled: disabledChampions.includes(index) }" :style="{border: index === selectedChampionIndex ? '8px solid #6438af' : ''}">
-      <img :src="image" @click="changeImage(index)" style="  max-width: 80%;max-height: 80%;" />
+      <img :src="image" @click="changeImage(index)" style="  max-width: 90%;max-height: 90%;" />
     </div>
   </div>
 </template>
@@ -64,8 +64,8 @@ export default {
   width: 8vw;
   height: 8vh;
   background: #eeeeee;
-  box-shadow:  5px 5px 3px #b7b7b7,
-               -5px -5px 3px #ffffff;
+  box-shadow:  2px 2px 2px #b7b7b7,
+               -2px -2px 2px #ffffff;
   cursor: pointer;
 }
 .champion-button.disabled {
