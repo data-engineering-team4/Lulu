@@ -53,7 +53,7 @@ jobs:
 
       - name: Modify and Register new task definition for airflow-scheduler
         run: |
-          jq '.containerDefinitions[0].image = ${{ env.FULL_IMAGE_NAME }} | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-scheduler.json > modified-task-definition.json
+          jq '.containerDefinitions[0].image = "'${{ env.FULL_IMAGE_NAME }}'" | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-scheduler.json > modified-task-definition.json
           TASK_DEFINITION_ARN=$(aws ecs register-task-definition --cli-input-json file://modified-task-definition.json | jq -r '.taskDefinition.taskDefinitionArn')
           echo "TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN" >> $GITHUB_ENV
 
@@ -67,7 +67,7 @@ jobs:
 
       - name: Modify and Register new task definition for airflow-worker
         run: |
-          jq '.containerDefinitions[0].image = ${{ env.FULL_IMAGE_NAME }} | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-worker.json > modified-task-definition-worker.json
+          jq '.containerDefinitions[0].image = "'${{ env.FULL_IMAGE_NAME }}'" | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-worker.json > modified-task-definition-worker.json
           TASK_DEFINITION_ARN_WORKER=$(aws ecs register-task-definition --cli-input-json file://modified-task-definition-worker.json | jq -r '.taskDefinition.taskDefinitionArn')
           echo "TASK_DEFINITION_ARN_WORKER=$TASK_DEFINITION_ARN_WORKER" >> $GITHUB_ENV
 
@@ -81,7 +81,7 @@ jobs:
 
       - name: Modify and Register new task definition for airflow-web-server
         run: |
-          jq '.containerDefinitions[0].image = ${{ env.FULL_IMAGE_NAME }} | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-web-server.json > modified-task-definition-web-server.json
+          jq '.containerDefinitions[0].image = "'${{ env.FULL_IMAGE_NAME }}'" | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-web-server.json > modified-task-definition-web-server.json
           TASK_DEFINITION_ARN_WEB_SERVER=$(aws ecs register-task-definition --cli-input-json file://modified-task-definition-web-server.json | jq -r '.taskDefinition.taskDefinitionArn')
           echo "TASK_DEFINITION_ARN_WEB_SERVER=$TASK_DEFINITION_ARN_WEB_SERVER" >> $GITHUB_ENV
 
