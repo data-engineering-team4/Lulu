@@ -1,9 +1,6 @@
 from fastapi import APIRouter
 
-router = APIRouter(
-    prefix="/summoners",
-    tags=["summoners"]
-)
+router = APIRouter(prefix="/summoners", tags=["summoners"])
 
 fake_items_db = {"plumbus": {"name": "Plumbus"}, "gun": {"name": "Portal Gun"}}
 
