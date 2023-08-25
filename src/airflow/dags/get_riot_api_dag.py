@@ -208,6 +208,12 @@ with DAG(
         from utils.common_util import upload_to_s3
         import pandas as pd
         import json
+        import os
+
+        directory = os.path.dirname(os.path.abspath(__file__))
+        json_file_path = os.path.join(directory, "utils/champion_dictionary.json")
+        with open(json_file_path, "r", encoding="utf-8") as json_file:
+            champion_mapping_ko_en = json.load(json_file)
 
         def save_to_redis(redis_conn, key, data):
             redis_conn.set(key, json.dumps(data))
@@ -251,6 +257,15 @@ with DAG(
                 win = [participant['win'] for participant in match_details['info']['participants']]
                 champion_name = [participant['championName'] for participant in match_details['info']['participants']]
                 champion_id = [participant['championId'] for participant in match_details['info']['participants']]
+
+                tmp_bans = []
+                bans = []
+                for i in range(5):
+                    tmp_bans.append([teams['bans'][i]['championId'] for teams in match_details['info']['teams']])
+                [bans.append(tmp_bans[i][0]) for i in range(5)]
+                [bans.append(tmp_bans[i][1]) for i in range(5)]
+                ko_bans = [champion_mapping_ko_en[str(champion_id)] for champion_id in bans]
+
                 patch = (match_details['info']['gameVersion'])[:5]
 
                 if len(team_id) == 10:
@@ -266,6 +281,7 @@ with DAG(
                             win[i],
                             champion_name[i],
                             champion_id[i],
+                            ko_bans[i],
                             patch
                         ]
                         all_data.append(row)
@@ -282,7 +298,7 @@ with DAG(
                 _wait_for_request(key_num)
 
         columns = ['tier', 'match_id', 'team_id', 'position', 'kills', 'deaths', 'assists', 'win', 'champion_name',
-                   'champion_id', 'patch']
+                   'champion_id', 'champion_ban', 'patch']
         total_df = pd.DataFrame(all_data, columns=columns)
         redis_conn.delete(all_data_key)
         upload_to_s3(total_df, 'match', key_num)
