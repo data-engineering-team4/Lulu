@@ -52,13 +52,12 @@ jobs:
       - name: Modify and Register new task definition for airflow-scheduler
         run: |
           jq '.containerDefinitions[0].image = env.ECR_REGISTRY + "/" + env.ECR_REPOSITORY + ":" + env.IMAGE_TAG | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-scheduler.json > modified-task-definition.json
-          aws ecs register-task-definition --cli-input-json file://modified-task-definition.json
           TASK_DEFINITION_ARN=$(aws ecs register-task-definition --cli-input-json file://modified-task-definition.json | jq -r '.taskDefinition.taskDefinitionArn')
-          echo "taskDefinition.taskDefinitionArn=$TASK_DEFINITION_ARN" >> $GITHUB_ENV
+          echo "TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN" >> $GITHUB_ENV
 
       - name: Update service for airflow-scheduler
         run: |
-          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-scheduler --task-definition ${{ env.taskDefinition.taskDefinitionArn }}
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-scheduler --task-definition ${{ env.TASK_DEFINITION_ARN }}
 
       - name: Download task definition for airflow-worker
         run: |
@@ -67,11 +66,12 @@ jobs:
       - name: Modify and Register new task definition for airflow-worker
         run: |
           jq '.containerDefinitions[0].image = env.ECR_REGISTRY + "/" + env.ECR_REPOSITORY + ":" + env.IMAGE_TAG | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-worker.json > modified-task-definition-worker.json
-          aws ecs register-task-definition --cli-input-json file://modified-task-definition-worker.json
+          TASK_DEFINITION_ARN_WORKER=$(aws ecs register-task-definition --cli-input-json file://modified-task-definition-worker.json | jq -r '.taskDefinition.taskDefinitionArn')
+          echo "TASK_DEFINITION_ARN_WORKER=$TASK_DEFINITION_ARN_WORKER" >> $GITHUB_ENV
 
       - name: Update service for airflow-worker
         run: |
-          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-worker --task-definition ${{ steps.register-task-definition-worker.outputs.taskDefinition.taskDefinitionArn }}
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-worker --task-definition ${{ env.TASK_DEFINITION_ARN_WORKER }}
 
       - name: Download task definition for airflow-web-server
         run: |
@@ -80,8 +80,9 @@ jobs:
       - name: Modify and Register new task definition for airflow-web-server
         run: |
           jq '.containerDefinitions[0].image = env.ECR_REGISTRY + "/" + env.ECR_REPOSITORY + ":" + env.IMAGE_TAG | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition-web-server.json > modified-task-definition-web-server.json
-          aws ecs register-task-definition --cli-input-json file://modified-task-definition-web-server.json
+          TASK_DEFINITION_ARN_WEB_SERVER=$(aws ecs register-task-definition --cli-input-json file://modified-task-definition-web-server.json | jq -r '.taskDefinition.taskDefinitionArn')
+          echo "TASK_DEFINITION_ARN_WEB_SERVER=$TASK_DEFINITION_ARN_WEB_SERVER" >> $GITHUB_ENV
 
       - name: Update service for airflow-web-server
         run: |
-          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-web-server --task-definition ${{ steps.register-task-definition-web-server.outputs.taskDefinition.taskDefinitionArn }}
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-web-server --task-definition ${{ env.TASK_DEFINITION_ARN_WEB_SERVER }}
