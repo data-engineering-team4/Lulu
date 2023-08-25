@@ -20,7 +20,7 @@
         <div class="champion-secction">
           <h1 class="custom-font" style="color: #9752ff;">챔피언을 선택하세요!</h1>
           <div class="champion-buttons">
-            <ChampionButton :selectedChampions="selectedChampions" @select-champion="selectChampion" :selectedChampionIndex="selectedChampionIndex"/>
+            <ChampionButton :selectedChampionIndex="selectedChampionIndex" :disabledChampions="disabledChampions" @select-champion="selectChampion"/>
           </div>
           <div>
             <button @click="submit" class="submit neumorphism-style" :class="{ 'enabled': isSubmitEnabled }" :disabled="!isSubmitEnabled">챔피언 선택</button>
@@ -56,6 +56,7 @@ export default {
       opponent_boxes: [6, 7, 8, 9, 10],
       selectedChampionIndex: null,
       boxImages: Array(10).fill(null),
+      disabledChampions: [],
     };
   },
   computed: {
@@ -66,6 +67,7 @@ export default {
   },
   methods: {
     selectChampion(imageUrl, index) {
+      if (this.disabledChampions.includes(index)) return;
       this.selectedChampionIndex = index;
       this.setSelectedImage(imageUrl);
     },
@@ -90,6 +92,8 @@ export default {
         this.boxImages[this.selectedBox - 1] = this.selectedImage;
         this.setSelectedBox(null);
         this.setSelectedImage(null);
+        this.disabledChampions.push(this.selectedChampionIndex);
+        this.selectedChampionIndex = null;
       } else {
         alert('?!!!')
       }

@@ -1,6 +1,6 @@
 <template>
   <div class="champion-buttons-container">
-    <div v-for="(image, index) in images" :key="index" class="champion-button" :style="{border: index === selectedChampionIndex ? '3px solid red' : ''}">
+    <div v-for="(image, index) in images" :key="index" class="champion-button" :class="{ disabled: disabledChampions.includes(index) }" :style="{border: index === selectedChampionIndex ? '3px solid red' : ''}">
       <img :src="image" @click="changeImage(index)" />
     </div>
   </div>
@@ -10,9 +10,13 @@
 export default {
   props: {
   selectedChampionIndex: {
-    type: Number,
-    required: true
-    }
+      type: Number,
+      required: true
+    },
+    disabledChampions: {
+      type: Array,
+      default: () => []
+  }
   },
   name: 'ChampionButton',
   data() {
@@ -25,6 +29,7 @@ export default {
   },
   methods: {
     changeImage(index) {
+      if (this.disabledChampions.includes(index)) return;
       this.$emit('select-champion', this.images[index], index);
     },
   },
@@ -52,6 +57,10 @@ export default {
   display: inline-block;
   flex-basis: 11.5%;
   margin: 0% 1% 0% 1%;
+}
+.champion-button.disabled {
+  filter: grayscale(100%);
+  pointer-events: none;
 }
 .champion-button img {
   max-width: 100%;
