@@ -29,8 +29,8 @@
             <div class="our-team-section" @click="toggleOurTeamSelection">
             <h2 :style="{ color: ourTeamSelected ? '#4c00ff' : '#b899ff' }" :class="[ourTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">&nbsp;&nbsp;&nbsp;우리팀</h2>
             <div v-for="(box, index) in our_boxes" :key="box" @click="selectBox(box)" :class="['our-lane-box', box === selectedBox ? 'selected' : '', selectedOurLaneIndex === index ? 'selected-our-lane' : '', 'our-neumorphism-style'] ">
-              <img v-if="boxImages[index]" :src="boxImages[index]" alt="Champion Image" class="lane-img"/>
-               <span class="position-label custom-font" style="color: #eeeeee">I'm<br>{{ getPositionLabel(index)}}</span>
+                <img v-if="boxImages[index]" :src="boxImages[index]" alt="Champion Image" class="lane-img"/>
+                <span class="position-label custom-font" :style="getLabelStyle(index)">I'm<br>{{ getPositionLabel(index)}}</span>
             </div>
         </div>
         <div class="champion-secction">
@@ -209,6 +209,17 @@ export default {
           return "";
       }}
     ,
+    getLabelStyle(index) {
+      if (this.selectedLaneIndex === index) {
+        return {
+          color: '#eeeeee'
+        };
+      } else {
+        return {
+          color: 'transparent'
+        };
+      }
+    },
     search(){
       this.summonerInfo.summonerName = this.summonerName
       axios.post('http://localhost:8000/banpick/search', this.summonerInfo)
@@ -383,6 +394,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
   width: 5vw;
   margin: 10% 0px 0% 20%;
   display: flex;
+  position: relative;
   justify-content: center;
   align-items: center;
   cursor: pointer;
@@ -623,5 +635,8 @@ box-shadow:  5px 5px 3px #b7b7b7,
   margin-left: 80%;
   cursor: pointer;
   margin-top: 50%;
+}
+.position-label{
+  position: absolute;
 }
 </style>
