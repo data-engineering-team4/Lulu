@@ -98,6 +98,7 @@
 <script>
 import ChampionButton from '@/components/ChampionButton.vue';
 import { mapState, mapMutations } from 'vuex'
+import axios from 'axios';
 
 export default {
   name: 'BanPickPage',
@@ -125,6 +126,10 @@ export default {
       ],
       unselectImage: require('@/assets/unselect.png'),
       selectedOurLaneIndex: null,
+      teamInfo: {
+        ourTeam: {},
+        opponentTeam: {}
+      }
     };
   },
   computed: {
@@ -163,8 +168,6 @@ export default {
         this.selectedLaneIndex = index;
         this.selectedOurLaneIndex = index;
       }
-        console.log('selectedOurLaneIndex:', this.selectedOurLaneIndex);
-        console.log('laneCircles:', this.laneCircles);
       this.updateRecommendMasteryLane();
 
     },
@@ -177,9 +180,15 @@ export default {
       }
     },
     submit() {
+
       if (this.selectedBox && this.selectedImage) {
         this.boxImages[this.selectedBox - 1] = this.selectedImage;
         this.boxChampionIndices[this.selectedBox - 1] = this.selectedChampionIndex;
+        if (this.ourTeamSelected) {
+            this.teamInfo.ourTeam[this.selectedBox] = this.selectedChampionIndex;
+          } else if (this.opponentTeamSelected) {
+            this.teamInfo.opponentTeam[this.selectedBox] = this.selectedChampionIndex;
+          }
         this.setSelectedBox(null);
         this.setSelectedImage(null);
         this.disabledChampions.push(this.selectedChampionIndex);
@@ -187,6 +196,14 @@ export default {
       } else {
         alert('?!!!')
       }
+
+      axios.post('http://localhost:8000/banpick/', this.teamInfo)
+        .then(response => {
+          console.log('Data sent successfully', response);
+        })
+        .catch(error => {
+          console.log('Error sending data', error);
+        });
     }
   },
 };
