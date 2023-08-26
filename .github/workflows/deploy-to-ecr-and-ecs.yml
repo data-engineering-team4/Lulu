@@ -6,15 +6,15 @@ on:
       - 'src/airflow/**'
     branches:
       - main
-      - test-cd
+
 env:
   AWS_REGION: ap-northeast-3
   ECR_REPOSITORY: de-4-2-ecr/airflow
-  ECR_CLUSTER:
   ECS_CLUSTER: ecs-de-4-2
 
 jobs:
   deploy:
+    if: github.repository == 'data-engineering-team4/Lulu'
     name: Deploy
     runs-on: ubuntu-latest
 
