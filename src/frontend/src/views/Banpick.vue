@@ -28,9 +28,9 @@
           <div class="main-section">
             <div class="our-team-section" @click="toggleOurTeamSelection">
             <h2 :style="{ color: ourTeamSelected ? '#4c00ff' : '#b899ff' }" :class="[ourTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">&nbsp;&nbsp;&nbsp;우리팀</h2>
-          <div v-for="(box, index) in our_boxes" :key="box" @click="selectBox(box)" :class="['our-lane-box', box === selectedBox ? 'selected' : '', 'our-neumorphism-style'] ">
-            <img v-if="boxImages[index]" :src="boxImages[index]" alt="Champion Image" class="lane-img"/>
-          </div>
+            <div v-for="(box, index) in our_boxes" :key="box" @click="selectBox(box)" :class="['our-lane-box', box === selectedBox ? 'selected' : '', selectedOurLaneIndex === index ? 'selected-our-lane' : '', 'our-neumorphism-style'] ">
+              <img v-if="boxImages[index]" :src="boxImages[index]" alt="Champion Image" class="lane-img"/>
+            </div>
         </div>
         <div class="champion-secction">
           <h5 class="custom-font" style="color: #9752ff; margin-top: 13.5%; margin-bottom: 1%">챔피언을 선택하세요!</h5>
@@ -52,15 +52,39 @@
           </div>
           <div class="right-section">
             <div class="recommend-section">
-              <div class="recommend-section-mastery">d</div>
+              <div class="recommend-section-mastery">
+                <div class="recommend-mastery-first">
+                  <div class="recommend-mastery-title custom-font">숙련도</div>
+                  <div class="recommend-mastery-user"><input class="mastery-summoner-name custom-font" type="text" placeholder="소환사명" style="text-align: center"></div>
+                  <div><i class="fas fa-search search-icon"></i> </div>
+                </div>
+                <div class="recommend-mastery-second">
+                  <div class="recommend-mastery-lane">
+                     <img class="mastery-lane" :src="recommendMasteryLaneContent ? require('@/assets/' + recommendMasteryLaneContent) : require('@/assets/unselect.png')" />
+                  </div>
+                  <div class="recommend-mastery-all">dd</div>
+                </div>
+              </div>
               <div class="recommend-section-table">
                 <div class="recommend-section-first">
-                  <div class="recommend-section-opponent-lane"></div>
-                  <div class="recommend-section-our-team"></div>
+                  <div class="recommend-section-opponent-lane">
+                    <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 2%;">상대 라이너</h3>
+                    <div class="recommend-section-part">챔피언초상화,이름,티어 3개 </div>
+                  </div>
+                  <div class="recommend-section-our-team">
+                    <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 2%; ">우리팀 조합</h3>
+                    <div class="recommend-section-part">챔피언초상화,이름,티어 3개</div>
+                  </div>
                 </div>
                 <div class="recommend-section-second">
-                  <div class="recommend-section-entire"></div>
-                  <div class="recommend-section-final"></div>
+                  <div class="recommend-section-all">
+                    <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 0%;">전체 조합</h3>
+                    <div class="recommend-section-part">챔피언초상화,이름,티어 3개</div>
+                  </div>
+                  <div class="recommend-section-final">
+                    <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 0%;">최종 조합</h3>
+                    <div class="recommend-section-part">챔피언초상화,이름,티어 3개 숙련도 고려</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -86,11 +110,21 @@ export default {
       opponentTeamSelected: false,
       our_boxes: [1, 2, 3, 4, 5],
       opponent_boxes: [6, 7, 8, 9, 10],
-      selectedChampionIndex: null,
+      selectedChampionIndex: {
+        type: Number,
+        default: 0
+      },
       boxImages: Array(10).fill(null),
       disabledChampions: [],
       boxChampionIndices: Array(10).fill(null),
       laneCircles: Array(5).fill(false),
+      selectedLaneIndex: null,
+      recommendMasteryLaneContent: null,
+      masteryLaneImage: 'unselect.png',
+      laneContent: ['bottom.png', 'jug.png', 'mid.png', 'top.png', 'sup.png'
+      ],
+      unselectImage: require('@/assets/unselect.png'),
+      selectedOurLaneIndex: null,
     };
   },
   computed: {
@@ -100,7 +134,6 @@ export default {
     }
   },
   methods: {
-    // ...mapMutations('box', ['setSelectedBox']),
     ...mapMutations('box', ['setSelectedBox', 'setSelectedImage']),
 
     selectChampion(imageUrl, index) {
@@ -121,7 +154,27 @@ export default {
       this.opponentTeamSelected = true;
     },
     selectCircle(index) {
-      this.laneCircles = this.laneCircles.map((selected, idx) => idx === index);
+      if (this.selectedLaneIndex === index) {
+        this.laneCircles = Array(5).fill(false);
+        this.selectedLaneIndex = null;
+        this.selectedOurLaneIndex = null;
+      } else {
+        this.laneCircles = this.laneCircles.map((selected, idx) => idx === index ? true : false);
+        this.selectedLaneIndex = index;
+        this.selectedOurLaneIndex = index;
+      }
+        console.log('selectedOurLaneIndex:', this.selectedOurLaneIndex);
+        console.log('laneCircles:', this.laneCircles);
+      this.updateRecommendMasteryLane();
+
+    },
+    updateRecommendMasteryLane() {
+      if (this.selectedLaneIndex !== null) {
+        this.recommendMasteryLaneContent = this.laneContent[this.selectedLaneIndex];
+      } else {
+        this.recommendMasteryLaneContent = null;
+        this.masteryLaneImage = 'unselect.png'
+      }
     },
     submit() {
       if (this.selectedBox && this.selectedImage) {
@@ -223,7 +276,6 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
   margin-bottom: 4%;
 border-radius: 25px;
 background: #eeeeee;
-  //background: #f4f0fc;
 box-shadow:  5px 5px 3px #b7b7b7,
              -5px -5px 3px #ffffff;
   justify-content: center;
@@ -258,7 +310,6 @@ box-shadow:  5px 5px 3px #b7b7b7,
   font-size: large;
   border: 0px;
 border-radius: 25px;
-//background: #eeeeee;
   background: #dddddd;
 box-shadow:  5px 5px 3px #b7b7b7,
              -5px -5px 3px #ffffff;
@@ -281,6 +332,10 @@ box-shadow:  5px 5px 3px #b7b7b7,
 }
 .our-lane-box.selected {
   border: 5px solid #4c00ff;
+}
+
+.selected-our-lane {
+  background-color: black;
 }
 
 .opponent-lane-box {
@@ -359,11 +414,73 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
   height: 30%;
   margin-bottom: 7%;
   justify-content: center;
-  border-radius: 25px;
+    border-radius: 25px;
   background: #eeeeee;
-  box-shadow:  5px 5px 3px #b7b7b7,
-               -5px -5px 3px #ffffff;
+box-shadow: inset 5px 5px 3px #b7b7b7,
+            inset -5px -5px 3px #ffffff;
+}
 
+.recommend-mastery-first{
+  width: 23vw;
+  height: 20%;
+  padding-top: 3%;
+  margin-bottom: 3%;
+  justify-content: center;
+  display: flex;
+
+}
+.recommend-mastery-title{
+  width: 5vw;
+  color: #9752ff;
+  font-size: large;
+  margin-top: 3%;
+  margin-right: 2%;
+}
+.recommend-mastery-user{
+  width: 12vw;
+  border-radius: 25px;
+background: #eeeeee;
+box-shadow: inset 5px 5px 3px #b7b7b7,
+            inset -5px -5px 3px #ffffff;
+}
+.mastery-summoner-name{
+  width: 80%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  font-size: large;
+  outline: none;
+}
+.recommend-mastery-second{
+  width: 23vw;
+  height: 60%;
+  margin-left: 4%;
+  justify-content: center;
+  display: flex;
+}
+
+.recommend-mastery-lane{
+  width: 20%;
+  height: 80%;
+  margin-left: 4%;
+  justify-content: center;
+  margin-top: 5%;
+}
+.mastery-lane{
+  width: 100%;
+  filter: hue-rotate(230deg);
+
+}
+.recommend-mastery-all{
+  width: 70%;
+  height: 90%;
+  margin-top: 2%;
+  margin-left: 6%;
+  justify-content: center;
+border-radius: 25px;
+background: linear-gradient(145deg, #d6d6d6, #ffffff);
+box-shadow:  5px 5px 6px #9b9b9b,
+             -5px -5px 6px #ffffff;
 }
 .recommend-section-table{
   width: 25vw;
@@ -377,31 +494,46 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
 }
 
 .recommend-section-first{
-  width: 25vw;
-  height: 50%;
+  width: 24vw;
+  height: 48%;
   display: flex;
+    margin-left: 0.5%;
   justify-content: center;
 }
 .recommend-section-second{
-  width: 25vw;
-  height: 50%;
+  width: 24vw;
+  height: 48%;
   display: flex;
+  margin-left: 2.5%;
   justify-content: center;
 }
 .recommend-section-opponent-lane{
   width: 45%;
-  background: #eeeeee;
-  box-shadow:  5px 5px 3px #b7b7b7,
-               -5px -5px 3px #ffffff;
   margin-right: 3%;
   margin-top: 3%;
 }
 .recommend-section-our-team{
   width: 45%;
-  background: #eeeeee;
-  box-shadow:  5px 5px 3px #b7b7b7,
-               -5px -5px 3px #ffffff;
   margin-top: 3%;
+}
+.recommend-section-all{
+  width: 45%;
+  margin-right: 3%;
+  margin-top: 3%;
+}
+.recommend-section-final{
+  width: 45%;
+  margin-right: 3%;
+  margin-top: 3%;
+}
+.recommend-section-part{
+  width: 95%;
+  height: 75%;
+border-radius: 25px;
+background: linear-gradient(145deg, #d6d6d6, #ffffff);
+box-shadow:  5px 5px 6px #9b9b9b,
+             -5px -5px 6px #ffffff;
+  margin-left: 5%;
 }
 
 .our-neumorphism-style:active {
@@ -428,5 +560,11 @@ background: #eeeeee;
 box-shadow:  5px 5px 3px #b7b7b7,
              -5px -5px 3px #ffffff;
 }
-
+.search-icon {
+  color: #6438af;
+  font-size: 20px;
+  margin-left: 80%;
+  cursor: pointer;
+  margin-top: 50%;
+}
 </style>
