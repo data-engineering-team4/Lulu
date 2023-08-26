@@ -348,10 +348,20 @@ with DAG(
                 ko_bans = []
                 
                 for i in range(5):
-                    tmp_bans.append([teams['bans'][i]['championId'] for teams in match_details['info']['teams']])
+                    tmp_bans_for_iteration = []
+                    for team in match_details["info"]["teams"]:
+                        if "bans" in team and i < len(team["bans"]):
+                            tmp_bans_for_iteration.append(team["bans"][i]["championId"])
+                        else:
+                            tmp_bans_for_iteration.append([-1, -1])
+                    tmp_bans.append(tmp_bans_for_iteration)
                 [bans.append(tmp_bans[i][0]) for i in range(5)]
                 [bans.append(tmp_bans[i][1]) for i in range(5)]
-                ko_bans = [champion_mapping_ko_en[str(champion_id)] for champion_id in bans]
+                for champion_id in bans:
+                    if str(champion_id) in champion_mapping_ko_en:
+                        ko_bans.append(champion_mapping_ko_en[str(champion_id)])
+                    else:
+                        ko_bans.append(None)
 
                 patch = (match_details["info"]["gameVersion"])[:5]
 
