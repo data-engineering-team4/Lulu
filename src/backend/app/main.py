@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from internal.routers import summoners, team
+from internal.routers import summoners, banpick
 
 # app = FastAPI(dependencies=[Depends(get_query_token)])
 app = FastAPI()
@@ -18,7 +18,7 @@ app.add_middleware(
 )
 
 app.include_router(summoners.router)
-app.include_router(team.router)
+app.include_router(banpick.router)
 
 
 @app.get("/")

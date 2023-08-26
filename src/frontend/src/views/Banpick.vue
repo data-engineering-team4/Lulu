@@ -30,6 +30,7 @@
             <h2 :style="{ color: ourTeamSelected ? '#4c00ff' : '#b899ff' }" :class="[ourTeamSelected ? 'custom-font' : 'custom-light-font', 'custom-font']">&nbsp;&nbsp;&nbsp;우리팀</h2>
             <div v-for="(box, index) in our_boxes" :key="box" @click="selectBox(box)" :class="['our-lane-box', box === selectedBox ? 'selected' : '', selectedOurLaneIndex === index ? 'selected-our-lane' : '', 'our-neumorphism-style'] ">
               <img v-if="boxImages[index]" :src="boxImages[index]" alt="Champion Image" class="lane-img"/>
+               <span class="position-label custom-font" style="color: #eeeeee">I'm<br>{{ getPositionLabel(index)}}</span>
             </div>
         </div>
         <div class="champion-secction">
@@ -55,8 +56,8 @@
               <div class="recommend-section-mastery">
                 <div class="recommend-mastery-first">
                   <div class="recommend-mastery-title custom-font">숙련도</div>
-                  <div class="recommend-mastery-user"><input class="mastery-summoner-name custom-font" type="text" placeholder="소환사명" style="text-align: center"></div>
-                  <div><i class="fas fa-search search-icon"></i> </div>
+                  <div class="recommend-mastery-user"><input v-model="summonerName" class="mastery-summoner-name custom-font" type="text" placeholder="소환사명" style="text-align: center"></div>
+                  <div><i @click="search" class="fas fa-search search-icon"></i> </div>
                 </div>
                 <div class="recommend-mastery-second">
                   <div class="recommend-mastery-lane">
@@ -129,7 +130,11 @@ export default {
       teamInfo: {
         ourTeam: {},
         opponentTeam: {},
-        myLane: null
+        myLane: -1
+      },
+      summonerName:'',
+      summonerInfo:{
+        summonerName: ''
       }
     };
   },
@@ -164,14 +169,15 @@ export default {
         this.laneCircles = Array(5).fill(false);
         this.selectedLaneIndex = null;
         this.selectedOurLaneIndex = null;
+        this.teamInfo.myLane = -1;
       } else {
         this.laneCircles = this.laneCircles.map((selected, idx) => idx === index ? true : false);
         this.selectedLaneIndex = index;
         this.selectedOurLaneIndex = index;
+        this.teamInfo.myLane = this.selectedLaneIndex;
       }
-      this.teamInfo.myLane = this.selectedLaneIndex
       this.updateRecommendMasteryLane();
-      axios.post('http://localhost:8000/banpick/', this.teamInfo)
+      axios.post('http://localhost:8000/banpick/produce', this.teamInfo)
         .then(response => {
           console.log('Data sent successfully', response);
         })
@@ -186,6 +192,32 @@ export default {
         this.recommendMasteryLaneContent = null;
         this.masteryLaneImage = 'unselect.png'
       }
+    },
+    getPositionLabel(index) {
+      switch (index) {
+        case 0:
+          return "TOP";
+        case 1:
+          return "JUG";
+        case 2:
+          return "MID";
+        case 3:
+          return "BOT";
+        case 4:
+          return "SUP";
+        default:
+          return "";
+      }}
+    ,
+    search(){
+      this.summonerInfo.summonerName = this.summonerName
+      axios.post('http://localhost:8000/banpick/search', this.summonerInfo)
+        .then(response => {
+          console.log('Data sent successfully', response);
+        })
+        .catch(error => {
+          console.log('Error sending data', error);
+        });
     },
     submit() {
 
@@ -205,7 +237,7 @@ export default {
         alert('?!!!')
       }
 
-      axios.post('http://localhost:8000/banpick/', this.teamInfo)
+      axios.post('http://localhost:8000/banpick/produce', this.teamInfo)
         .then(response => {
           console.log('Data sent successfully', response);
         })
