@@ -9,19 +9,19 @@
         </div>
         <div class="section">
           <div class="left-section">
-            <div class="lane-circle" :style="{ 'margin-top': '12vh', filter: laneCircles[0] ? 'hue-rotate(167deg)' : 'hue-rotate(360deg)' }" @click="selectCircle(0)">
+            <div class="lane-circle" :style="{ 'margin-top': '12vh', filter: laneCircles[0] ? 'hue-rotate(360deg)' : 'grayscale(100%)' }" @click="selectCircle(0)">
               <img src="@/assets/bottom.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
             </div>
-            <div class="lane-circle" :style="{ filter: laneCircles[1] ? 'hue-rotate(167deg)' : 'hue-rotate(360deg)' }" @click="selectCircle(1)">
+            <div class="lane-circle" :style="{ filter: laneCircles[1] ? 'hue-rotate(360deg)' : 'grayscale(100%)' }" @click="selectCircle(1)">
               <img src="@/assets/jug.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
             </div>
-            <div class="lane-circle" :style="{ filter: laneCircles[2] ? 'hue-rotate(167deg)' : 'hue-rotate(360deg)' }" @click="selectCircle(2)">
+            <div class="lane-circle" :style="{ filter: laneCircles[2] ? 'hue-rotate(360deg)' : 'grayscale(100%)' }" @click="selectCircle(2)">
               <img src="@/assets/mid.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
             </div>
-            <div class="lane-circle" :style="{ filter: laneCircles[3] ? 'hue-rotate(167deg)' : 'hue-rotate(360deg)' }" @click="selectCircle(3)">
+            <div class="lane-circle" :style="{ filter: laneCircles[3] ? 'hue-rotate(360deg)' : 'grayscale(100%)' }" @click="selectCircle(3)">
               <img src="@/assets/top.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
             </div>
-            <div class="lane-circle" :style="{ filter: laneCircles[4] ? 'hue-rotate(167deg)' : 'hue-rotate(360deg)' }" @click="selectCircle(4)">
+            <div class="lane-circle" :style="{ filter: laneCircles[4] ? 'hue-rotate(360deg)' : 'grayscale(100%)' }" @click="selectCircle(4)">
               <img src="@/assets/sup.png" style="max-width: 60%;max-height: 60%; filter: hue-rotate(230deg); ">
             </div>
           </div>
@@ -352,7 +352,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
 }
 
 .selected-our-lane {
-  background-color: black;
+  background-color: #9752ff !important;
 }
 
 .opponent-lane-box {
