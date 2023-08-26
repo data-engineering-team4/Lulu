@@ -128,7 +128,8 @@ export default {
       selectedOurLaneIndex: null,
       teamInfo: {
         ourTeam: {},
-        opponentTeam: {}
+        opponentTeam: {},
+        myLane: null
       }
     };
   },
@@ -168,8 +169,15 @@ export default {
         this.selectedLaneIndex = index;
         this.selectedOurLaneIndex = index;
       }
+      this.teamInfo.myLane = this.selectedLaneIndex
       this.updateRecommendMasteryLane();
-
+      axios.post('http://localhost:8000/banpick/', this.teamInfo)
+        .then(response => {
+          console.log('Data sent successfully', response);
+        })
+        .catch(error => {
+          console.log('Error sending data', error);
+        });
     },
     updateRecommendMasteryLane() {
       if (this.selectedLaneIndex !== null) {
