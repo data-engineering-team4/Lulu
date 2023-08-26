@@ -374,7 +374,9 @@ with DAG(
 
                     for bans_champion_id in bans:
                         if str(bans_champion_id) in champion_mapping_ko_en:
-                            ko_bans.append(champion_mapping_ko_en[str(bans_champion_id)])
+                            ko_bans.append(
+                                champion_mapping_ko_en[str(bans_champion_id)]
+                            )
                         else:
                             ko_bans.append(None)
 
@@ -450,34 +452,27 @@ with DAG(
             json_data = json_file.read()
 
         champion_dict = json.loads(json_data)
-        data = {"id": []}
-        data.update({key: [] for key in champion_dict.keys() if key != "id"})
-        total_df = pd.DataFrame(data)
-        logging.info(len(id_list))
+        data_list = []
+
         for id in id_list:
             tmp = get_champion_mastery_by_id(id, api_key)
-            champion_id = []
-            champion_points = []
+            data = {"id": id}
+
+            for key in champion_dict.keys():
+                if key != "id":
+                    data[key] = 0
+
             for champion in tmp:
-                champion_id.append(champion["championId"])
-                champion_points.append(champion["championPoints"])
-            data = {"id": []}
-            data.update({key: [] for key in champion_dict.keys() if key != "id"})
+                champion_id = champion["championId"]
+                champion_points = champion["championPoints"]
 
-            data["id"].append(id)
+                if str(champion_id) in data:
+                    data[str(champion_id)] = champion_points
 
-            for i in range(len(champion_id)):
-                if str(champion_id[i]) in data:
-                    data[str(champion_id[i])].append(champion_points[i])
-
-            for key in data.keys():
-                if key != "id" and not data[key]:
-                    data[key].append(0)
-
-            df = pd.DataFrame(data)
-            total_df = pd.concat([total_df, df], ignore_index=True)
+            data_list.append(data)
             _wait_for_request(key_num)
 
+        total_df = pd.DataFrame(data_list)
         upload_to_s3(total_df, "mastery", key_num)
 
     @task()
