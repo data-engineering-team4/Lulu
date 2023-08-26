@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from internal.routers import summoners, banpick
+from routers import summoners, banpick
 
 # app = FastAPI(dependencies=[Depends(get_query_token)])
 app = FastAPI()
