@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from ..models.team_info import TeamInfo
-from ..models.summoner_info import SummonerInfo
+from models.team_info import TeamInfo
+from models.summoner_info import SummonerInfo
 
 router = APIRouter()
 
