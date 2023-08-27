@@ -25,7 +25,9 @@ csv_data = BytesIO(content)
 csv_df = pd.read_csv(csv_data, encoding="utf-8")
 
 directory = os.path.dirname(os.path.abspath(__file__))
-json_file_path = os.path.join(directory, "utils/champion_mapping_ko_en.json")
+json_file_path = os.path.join(
+    directory, "../airflow/dags/utils/champion_mapping_ko_en.json"
+)
 
 with open(json_file_path, "r", encoding="utf-8") as json_file:
     champion_mapping_ko_en = json.load(json_file)
