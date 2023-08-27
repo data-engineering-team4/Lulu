@@ -4,8 +4,10 @@ on:
   push:
     paths:
       - 'src/airflow/**'
+      - '.github/workflows/**' # todo 삭제
     branches:
       - main
+      - test-cd # todo 삭제
 
 env:
   AWS_REGION: ap-northeast-3
@@ -14,7 +16,7 @@ env:
 
 jobs:
   deploy:
-    if: github.repository == 'data-engineering-team4/Lulu'
+    # if: github.repository == 'data-engineering-team4/Lulu'
     name: Deploy
     runs-on: ubuntu-latest
 
@@ -95,6 +97,7 @@ jobs:
           TASK_ARN=$(aws ecs list-tasks --cluster ${{ env.ECS_CLUSTER }} --service-name lulu-airflow-web-server --query taskArns[0] --output text)
           CONTAINER_INSTANCE=$(aws ecs describe-tasks --cluster ${{ env.ECS_CLUSTER }} --tasks $TASK_ARN --query tasks[0].containerInstanceArn --output text)
           EC2_INSTANCE_ID=$(aws ecs describe-container-instances --cluster ${{ env.ECS_CLUSTER }} --container-instances $CONTAINER_INSTANCE --query containerInstances[0].ec2InstanceId --output text)
+          echo "EC2_INSTANCE_ID: $EC2_INSTANCE_ID"
           PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $EC2_INSTANCE_ID --query Reservations[0].Instances[0].PublicIpAddress --output text)
           echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
 
