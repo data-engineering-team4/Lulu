@@ -92,11 +92,10 @@ jobs:
       - name: Fetch Public IP for Airflow Webserver
         id: fetch-ip
         run: |
-          TASK_ARN=$(aws ecs list-tasks --cluster ${{ env.ECS_CLUSTER }} --service-name lulu-airflow-web-server --query taskArns[0] --output text)
-          CONTAINER_INSTANCE=$(aws ecs describe-tasks --cluster ${{ env.ECS_CLUSTER }} --tasks $TASK_ARN --query tasks[0].containerInstanceArn --output text)
-          EC2_INSTANCE_ID=$(aws ecs describe-container-instances --cluster ${{ env.ECS_CLUSTER }} --container-instances $CONTAINER_INSTANCE --query containerInstances[0].ec2InstanceId --output text)
-          PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $EC2_INSTANCE_ID --query Reservations[0].Instances[0].PublicIpAddress --output text)
-          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
+          TASK_ARN=$(aws ecs list-tasks --cluster ${{ env.ECS_CLUSTER }} --service-name lulu-airflow-web-server --query 'taskArns[0]' --output text) || echo "TASK_ARN failed"
+          NETWORK_INTERFACE_ID=$(aws ecs describe-tasks --cluster ${{ env.ECS_CLUSTER }} --tasks $TASK_ARN --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text) || echo "NETWORK_INTERFACE_ID failed"
+          PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids $NETWORK_INTERFACE_ID --query 'NetworkInterfaces[0].Association.PublicIp' --output text) || echo "PUBLIC_IP failed"
+          echo "PUBLIC_IP=$PUBLIC_IP:8080" >> $GITHUB_ENV
 
       - name: Set Slack Message
         run: |
