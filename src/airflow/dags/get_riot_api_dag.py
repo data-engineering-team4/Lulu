@@ -202,57 +202,64 @@ with DAG(
                 for division in division_list:
                     match_list_by_tier[tier + division] = []
 
-        for summoner in summoner_ids:
+        for index, summoner in enumerate(summoner_ids):
             # todo 개선 1. retry를 위해 갯수 redis or 저장된 match_data로 비교 2. summoner_ids를 티어별로 나눈뒤 진행하면 시간 절약
-            tier = summoner["tier"]
-            if summoner["tier"] not in ["CHALLENGER", "GRANDMASTER", "MASTER"]:
-                tier = summoner["tier"] + summoner["division"]
+            try:
+                if index % 100 == 0:
+                    logging.info(f"🚀{index}")
+                tier = summoner["tier"]
+                if summoner["tier"] not in ["CHALLENGER", "GRANDMASTER", "MASTER"]:
+                    tier = summoner["tier"] + summoner["division"]
 
-            if len(match_list_by_tier[tier]) >= TIER_MATCH_COUNT:
-                continue
+                if len(match_list_by_tier[tier]) >= TIER_MATCH_COUNT:
+                    continue
 
-            puuid = get_puuid_by_id(summoner["summoner_id"], api_key)
-            summoner["puuid"] = puuid if puuid else None
-            if not puuid:
-                logging.error(
-                    f"🚀Failed to fetch puuid for {summoner['summoner_name']} after retries, puuid set to None"
-                )
-            _wait_for_request(key_num)
-
-            puuid = summoner["puuid"]
-
-            # match 중에 중복되는 거 있는지 검사
-            matches = get_match_history(
-                puuid, seven_days_ago_timestamp_in_seconds, 1, 100, api_key
-            )
-            unique_matches = [
-                match for match in matches if match not in processed_match_ids
-            ]
-
-            if unique_matches:
-                if len(match_list_by_tier[tier]) + len(matches) > TIER_MATCH_COUNT:
-                    needed_matches = TIER_MATCH_COUNT - len(match_list_by_tier[tier])
-                    match_list_by_tier[tier].extend(matches[:needed_matches])
-                    match_ids_to_add = [
-                        match for match in unique_matches[:needed_matches]
-                    ]
-                    processed_match_ids.update(
-                        [match for match in unique_matches[:needed_matches]]
+                puuid = get_puuid_by_id(summoner["summoner_id"], api_key)
+                summoner["puuid"] = puuid if puuid else None
+                if not puuid:
+                    logging.error(
+                        f"🚀Failed to fetch puuid for {summoner['summoner_name']} after retries, puuid set to None"
                     )
-                    redis_conn.sadd(existing_match, *match_ids_to_add)
-                else:
-                    match_list_by_tier[tier].extend(matches)
-                    match_ids_to_add = [match for match in unique_matches]
-                    processed_match_ids.update([match for match in unique_matches])
-                    redis_conn.sadd(existing_match, *match_ids_to_add)
-                    logging.info(f"🚀{tier} : {len(match_list_by_tier[tier])}")
-            _wait_for_request(key_num)
-            if all(
-                len(match_list) >= TIER_MATCH_COUNT
-                for match_list in match_list_by_tier.values()
-            ):
-                logging.info(f"🚀match_list finished")
-                break
+                _wait_for_request(key_num)
+
+                puuid = summoner["puuid"]
+
+                # match 중에 중복되는 거 있는지 검사
+                matches = get_match_history(
+                    puuid, seven_days_ago_timestamp_in_seconds, 1, 100, api_key
+                )
+                unique_matches = [
+                    match for match in matches if match not in processed_match_ids
+                ]
+
+                if unique_matches:
+                    if len(match_list_by_tier[tier]) + len(matches) > TIER_MATCH_COUNT:
+                        needed_matches = TIER_MATCH_COUNT - len(
+                            match_list_by_tier[tier]
+                        )
+                        match_list_by_tier[tier].extend(matches[:needed_matches])
+                        match_ids_to_add = [
+                            match for match in unique_matches[:needed_matches]
+                        ]
+                        processed_match_ids.update(
+                            [match for match in unique_matches[:needed_matches]]
+                        )
+                        redis_conn.sadd(existing_match, *match_ids_to_add)
+                    else:
+                        match_list_by_tier[tier].extend(matches)
+                        match_ids_to_add = [match for match in unique_matches]
+                        processed_match_ids.update([match for match in unique_matches])
+                        redis_conn.sadd(existing_match, *match_ids_to_add)
+                _wait_for_request(key_num)
+                if all(
+                    len(match_list) >= TIER_MATCH_COUNT
+                    for match_list in match_list_by_tier.values()
+                ):
+                    logging.info(f"🚀match_list finished")
+                    break
+            except KeyError:
+                time.sleep(5)
+                logging.info(f"🚀error")
 
         redis_key = f"match_data_{key_num}"
         for tier in match_list_by_tier.keys():
@@ -308,7 +315,8 @@ with DAG(
                 continue
 
             try:
-                logging.info(index)
+                if index % 1000 == 0:
+                    logging.info(f"🚀{index}")
                 match_details = get_match_details(match_id, api_key)
                 team_id = [
                     participant["teamId"]
@@ -349,22 +357,26 @@ with DAG(
                     tmp_bans = []
                     bans = []
                     ko_bans = []
-                    
+
                     for i in range(5):
                         tmp_bans_for_iteration = []
                         for team in match_details["info"]["teams"]:
                             if "bans" in team and i < len(team["bans"]):
-                                tmp_bans_for_iteration.append(team["bans"][i]["championId"])
+                                tmp_bans_for_iteration.append(
+                                    team["bans"][i]["championId"]
+                                )
                             else:
                                 tmp_bans_for_iteration.append([-1, -1])
                         tmp_bans.append(tmp_bans_for_iteration)
-                        
+
                     [bans.append(tmp_bans[i][0]) for i in range(5)]
                     [bans.append(tmp_bans[i][1]) for i in range(5)]
 
-                    for champion_id in bans:
-                        if str(champion_id) in champion_mapping_ko_en:
-                            ko_bans.append(champion_mapping_ko_en[str(champion_id)])
+                    for bans_champion_id in bans:
+                        if str(bans_champion_id) in champion_mapping_ko_en:
+                            ko_bans.append(
+                                champion_mapping_ko_en[str(bans_champion_id)]
+                            )
                         else:
                             ko_bans.append(None)
 
@@ -389,9 +401,11 @@ with DAG(
             except KeyError:
                 try:
                     logging.info(match_details["status"])
+                    time.sleep(5)
                     continue
                 except Exception as e:
                     logging.info(f"예외가 발생{e}")
+                    time.sleep(5)
                     continue
             finally:
                 _wait_for_request(key_num)
@@ -438,34 +452,27 @@ with DAG(
             json_data = json_file.read()
 
         champion_dict = json.loads(json_data)
-        data = {"id": []}
-        data.update({key: [] for key in champion_dict.keys() if key != "id"})
-        total_df = pd.DataFrame(data)
-        logging.info(len(id_list))
+        data_list = []
+
         for id in id_list:
             tmp = get_champion_mastery_by_id(id, api_key)
-            champion_id = []
-            champion_points = []
+            data = {"id": id}
+
+            for key in champion_dict.keys():
+                if key != "id":
+                    data[key] = 0
+
             for champion in tmp:
-                champion_id.append(champion["championId"])
-                champion_points.append(champion["championPoints"])
-            data = {"id": []}
-            data.update({key: [] for key in champion_dict.keys() if key != "id"})
+                champion_id = champion["championId"]
+                champion_points = champion["championPoints"]
 
-            data["id"].append(id)
+                if str(champion_id) in data:
+                    data[str(champion_id)] = champion_points
 
-            for i in range(len(champion_id)):
-                if str(champion_id[i]) in data:
-                    data[str(champion_id[i])].append(champion_points[i])
-
-            for key in data.keys():
-                if key != "id" and not data[key]:
-                    data[key].append(0)
-
-            df = pd.DataFrame(data)
-            total_df = pd.concat([total_df, df], ignore_index=True)
+            data_list.append(data)
             _wait_for_request(key_num)
 
+        total_df = pd.DataFrame(data_list)
         upload_to_s3(total_df, "mastery", key_num)
 
     @task()
