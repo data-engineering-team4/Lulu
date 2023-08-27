@@ -25,7 +25,9 @@ csv_data = BytesIO(content)
 csv_df = pd.read_csv(csv_data, encoding="utf-8", usecols=lambda column: column != "id")
 
 directory = os.path.dirname(os.path.abspath(__file__))
-json_file_path = os.path.join(directory, "../airflow/dags/utils/champion_dictionary.json")
+json_file_path = os.path.join(
+    directory, "../airflow/dags/utils/champion_dictionary.json"
+)
 
 with open(json_file_path, "r", encoding="utf-8") as json_file:
     champion_dict = json.load(json_file)
@@ -45,7 +47,9 @@ from sklearn.preprocessing import StandardScaler
 
 num_champions = 10
 
-json_file_path = os.path.join(directory, "../airflow/dags/utils/champion_mapping_ko_en.json")
+json_file_path = os.path.join(
+    directory, "../airflow/dags/utils/champion_mapping_ko_en.json"
+)
 with open(json_file_path, "r", encoding="utf-8") as f:
     champion_mapping_ko_en = json.load(f)
 champion_mapping_en_kr = {value: key for key, value in champion_mapping_ko_en.items()}
