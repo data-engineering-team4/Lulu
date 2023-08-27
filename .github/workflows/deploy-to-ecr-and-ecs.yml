@@ -89,10 +89,19 @@ jobs:
         run: |
           aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-web-server --task-definition ${{ env.TASK_DEFINITION_ARN_WEB_SERVER }}
 
+      - name: Fetch Public IP for Airflow Webserver
+        id: fetch-ip
+        run: |
+          TASK_ARN=$(aws ecs list-tasks --cluster ${{ env.ECS_CLUSTER }} --service-name lulu-airflow-web-server --query taskArns[0] --output text)
+          CONTAINER_INSTANCE=$(aws ecs describe-tasks --cluster ${{ env.ECS_CLUSTER }} --tasks $TASK_ARN --query tasks[0].containerInstanceArn --output text)
+          EC2_INSTANCE_ID=$(aws ecs describe-container-instances --cluster ${{ env.ECS_CLUSTER }} --container-instances $CONTAINER_INSTANCE --query containerInstances[0].ec2InstanceId --output text)
+          PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $EC2_INSTANCE_ID --query Reservations[0].Instances[0].PublicIpAddress --output text)
+          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
+
       - name: Set Slack Message
         run: |
           if [ "${{ job.status }}" == "success" ]; then
-            echo "SLACK_MESSAGE=🎉 ECR/ECS 배포가 성공했습니다! 🎉" >> $GITHUB_ENV
+            echo "SLACK_MESSAGE=🎉 ECR/ECS 배포가 성공했습니다! 웹 서버 주소: ${{ env.PUBLIC_IP }} 🎉" >> $GITHUB_ENV
           else
             echo "SLACK_MESSAGE=💣 ECR/ECS 배포가 실패했습니다. 💣" >> $GITHUB_ENV
           fi
