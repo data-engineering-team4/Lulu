@@ -4,10 +4,8 @@ on:
   push:
     paths:
       - 'src/airflow/**'
-      - '.github/workflows/**' # todo 삭제
     branches:
       - main
-      - test-cd # todo 삭제
 
 env:
   AWS_REGION: ap-northeast-3
@@ -16,7 +14,7 @@ env:
 
 jobs:
   deploy:
-    # if: github.repository == 'data-engineering-team4/Lulu'
+    if: github.repository == 'data-engineering-team4/Lulu'
     name: Deploy
     runs-on: ubuntu-latest
 
