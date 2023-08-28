@@ -6,6 +6,8 @@ from .routers import summoners, banpick
 app = FastAPI()
 
 origins = [
+    "http://de-4-2-vue.s3-website.ap-northeast-3.amazonaws.com",
+    "d1rxnfuwcw8lzd.cloudfront.net",
     "http://localhost:8080",
 ]
 
