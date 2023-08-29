@@ -14,3 +14,4 @@ uvicorn==0.23.2
 sqlalchemy
 mysql-connector-python
 kinesis
+Python-dotenv
