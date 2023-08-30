@@ -18,10 +18,10 @@ aws_access_key_id = os.environ.get("AWS_ACCESS_KEY_ID")
 aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
 
 client = boto3.client(
-    'kinesis',
+    "kinesis",
     aws_access_key_id=aws_access_key_id,
     aws_secret_access_key=aws_secret_access_key,
-    region_name='ap-northeast-3'
+    region_name="ap-northeast-3",
 )
 
 
@@ -37,9 +37,7 @@ def get_db():
 async def get_team_info(team_info: TeamInfo):
     print("Received data:", team_info)
     response = client.put_record(
-        StreamName=kinesis_stream_name,
-        Data='my_data',
-        PartitionKey='partition_key'
+        StreamName=kinesis_stream_name, Data="my_data", PartitionKey="partition_key"
     )
 
     return {"ourTeam": team_info.ourTeam, "opponentTeam": team_info.opponentTeam}
