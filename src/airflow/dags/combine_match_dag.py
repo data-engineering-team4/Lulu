@@ -50,7 +50,7 @@ with DAG(
         s3_client.put_object(
             Bucket=bucket_name,
             Body=final_csv_buffer.getvalue(),
-            Key=f"data/adhoc_match/{current_date}/merged.csv",
+            Key=f"data/adhoc_match/merged.csv",
         )
 
     start = EmptyOperator(task_id="start")
