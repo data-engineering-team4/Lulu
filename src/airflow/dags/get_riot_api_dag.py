@@ -15,6 +15,8 @@ from utils.constants import (
     TIER_MATCH_COUNT,
     S3_UPLOAD_THRESHOLD,
     MATCH_THRESHOLD,
+    RAW_MATCH_BUCKET,
+    RAW_MASTERY_BUCKET,
 )
 
 # Riot API 관련 유틸리티 모듈 임포트
@@ -50,6 +52,10 @@ limiters = {
         RequestLimiter(max_requests=100, per_seconds=120),
     ),
     3: (
+        RequestLimiter(max_requests=20, per_seconds=1),
+        RequestLimiter(max_requests=100, per_seconds=120),
+    ),
+    4: (
         RequestLimiter(max_requests=20, per_seconds=1),
         RequestLimiter(max_requests=100, per_seconds=120),
     ),
@@ -390,7 +396,7 @@ with DAG(
                         unique_parquet_name,
                         schema_fields,
                         column_names,
-                        "match",
+                        RAW_MATCH_BUCKET,
                     )
                     match_detail_rows.clear()  # 메모리를 비움
 
@@ -410,7 +416,7 @@ with DAG(
                     unique_parquet_name,
                     schema_fields,
                     column_names,
-                    "match",
+                    RAW_MATCH_BUCKET,
                 )
 
             save_to_redis(redis_conn, all_data_key, all_data)
@@ -476,7 +482,7 @@ with DAG(
                     unique_parquet_name,
                     schema_fields,
                     column_names,
-                    "mastery",
+                    RAW_MASTERY_BUCKET,
                 )
                 mastery_data_rows.clear()  # 메모리를 비움
 
@@ -496,7 +502,7 @@ with DAG(
                 unique_parquet_name,
                 schema_fields,
                 column_names,
-                "mastery",
+                RAW_MASTERY_BUCKET,
             )
 
     @task()
@@ -518,15 +524,18 @@ with DAG(
         summoners_task_2 = get_summoners_by_tier(2)
         summoners_task_3 = get_summoners_by_tier(3)
 
+
     with TaskGroup(group_id="match_list_task_group") as match_list_task_group:
         match_list_task_1 = get_match_list(1)
         match_list_task_2 = get_match_list(2)
         match_list_task_3 = get_match_list(3)
 
+
     with TaskGroup(group_id="match_extract_group") as match_extract_group:
         match_extract_task_1 = extract_match_data(1)
         match_extract_task_2 = extract_match_data(2)
         match_extract_task_3 = extract_match_data(3)
+
 
     with TaskGroup(group_id="mastery_extract_group") as mastery_extract_group:
         mastery_extract_task_1 = get_champion_mastery(1)
