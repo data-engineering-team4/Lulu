@@ -2,12 +2,27 @@ from fastapi import APIRouter, Depends
 from ..models.team_info import TeamInfo
 from ..models.summoner_info import SummonerInfo
 from ..models.summoner import Summoner, create_summoner
-from confluent_kafka import Producer
 from ..db_session import SessionLocal
 from sqlalchemy.orm import Session
 import os
+from dotenv import load_dotenv
+import json
+import boto3
 
 router = APIRouter()
+load_dotenv()
+
+kinesis_stream_name = os.environ.get("KINESIS_STREAM_NAME")
+print(kinesis_stream_name)
+aws_access_key_id = os.environ.get("AWS_ACCESS_KEY_ID")
+aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+
+client = boto3.client(
+    "kinesis",
+    aws_access_key_id=aws_access_key_id,
+    aws_secret_access_key=aws_secret_access_key,
+    region_name="ap-northeast-3",
+)
 
 
 def get_db():
@@ -18,15 +33,12 @@ def get_db():
         db.close()
 
 
-bootstrap_servers = os.environ.get("KAFKA_BOOTSTRAP_SERVERS")
-p = Producer({"bootstrap.servers": bootstrap_servers})
-
-
 @router.post("/banpick/produce")
 async def get_team_info(team_info: TeamInfo):
     print("Received data:", team_info)
-    p.produce("testfastapi", value=str(team_info.dict()))
-    p.flush()
+    response = client.put_record(
+        StreamName=kinesis_stream_name, Data="my_data", PartitionKey="partition_key"
+    )
 
     return {"ourTeam": team_info.ourTeam, "opponentTeam": team_info.opponentTeam}
 
