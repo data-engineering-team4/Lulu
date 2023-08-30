@@ -1,5 +1,6 @@
 import pendulum
 import datetime
+import json
 
 
 def get_current_datetime():
@@ -54,7 +55,7 @@ def convert_milliseconds_to_datetime(milliseconds, format="%Y-%m-%d %H:%M"):
     return date_str
 
 
-def upload_to_s3(total_df, type, num):
+def upload_to_s3(file_path, type, file_name, file_type='parquet'):
     import os
     import boto3
     from airflow.models import Variable
@@ -72,12 +73,11 @@ def upload_to_s3(total_df, type, num):
         aws_secret_access_key=aws_secret_access_key,
     )
 
-    temp_csv_path = "dags/temp_data.csv"
-    total_df.to_csv(temp_csv_path, index=False)
     s3.upload_file(
-        temp_csv_path, bucket_name, f"{s3_folder}/{type}/{YMD}/data{num}.csv"
+        file_path, bucket_name, f"{s3_folder}/{type}/{YMD}/{file_name}.{file_type}"
     )
-    os.remove(temp_csv_path)
+    os.remove(file_path)
+
 
 
 def setup_task(key_num):
@@ -94,6 +94,19 @@ def setup_task(key_num):
     return api_key, redis_conn, logging
 
 
+def save_to_redis(redis_conn, key, data):
+    redis_conn.set(key, data)
+
+
+def load_from_redis(redis_conn, key):
+    data_bytes = redis_conn.get(key)
+    if data_bytes:
+        data_json = data_bytes.decode("utf-8")
+        return json.loads(data_json)
+    else:
+        return []
+
+
 def generate_fernet_key():
     """
     Fernet key를 발급 받습니다.
@@ -102,8 +115,3 @@ def generate_fernet_key():
 
     fernet_key = Fernet.generate_key()
     return fernet_key.decode()
-
-
-if __name__ == "__main__":
-    # export AIRFLOW__CORE__FERNET_KEY=FERNET_KEY
-    print(generate_fernet_key())
