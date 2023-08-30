@@ -11,6 +11,7 @@ env:
   AWS_REGION: ap-northeast-3
   ECR_REPOSITORY: de-4-2-ecr/airflow
   ECS_CLUSTER: ecs-de-4-2
+  DNS_NAME: de-4-2-alb
 
 jobs:
   deploy:
@@ -89,18 +90,15 @@ jobs:
         run: |
           aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service lulu-airflow-web-server --task-definition ${{ env.TASK_DEFINITION_ARN_WEB_SERVER }}
 
-      - name: Fetch Public IP for Airflow Webserver
-        id: fetch-ip
+      - name: Get lb DNS
         run: |
-          TASK_ARN=$(aws ecs list-tasks --cluster ${{ env.ECS_CLUSTER }} --service-name lulu-airflow-web-server --query 'taskArns[0]' --output text) || echo "TASK_ARN failed"
-          NETWORK_INTERFACE_ID=$(aws ecs describe-tasks --cluster ${{ env.ECS_CLUSTER }} --tasks $TASK_ARN --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text) || echo "NETWORK_INTERFACE_ID failed"
-          PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids $NETWORK_INTERFACE_ID --query 'NetworkInterfaces[0].Association.PublicIp' --output text) || echo "PUBLIC_IP failed"
-          echo "PUBLIC_IP=$PUBLIC_IP:8080" >> $GITHUB_ENV
+          LB_DNS=$(aws elbv2 describe-load-balancers --names ${{ env.DNS_NAME }} --query 'LoadBalancers[0].DNSName' --output text) || echo "LB_DNS failed"
+          echo "LB_DNS=$LB_DNS" >> $GITHUB_ENV
 
       - name: Set Slack Message
         run: |
           if [ "${{ job.status }}" == "success" ]; then
-            echo "SLACK_MESSAGE=🎉 ECR/ECS 배포가 성공했습니다! 웹 서버 주소: ${{ env.PUBLIC_IP }} 🎉" >> $GITHUB_ENV
+            echo "SLACK_MESSAGE=🎉 ECR/ECS 배포가 성공했습니다! 웹 서버 주소: ${{ env.LB_DNS }} 🎉" >> $GITHUB_ENV
           else
             echo "SLACK_MESSAGE=💣 ECR/ECS 배포가 실패했습니다. 💣" >> $GITHUB_ENV
           fi
