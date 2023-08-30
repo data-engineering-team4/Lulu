@@ -8,10 +8,20 @@ from datetime import datetime, timedelta
 # 유틸리티 및 상수 모듈 임포트
 from utils.slack_alert import SlackAlert
 from utils.request_limiter import RequestLimiter
-from utils.constants import TIERS, DIVISIONS, HIGH_ELO_LIST, TIER_MATCH_COUNT, S3_UPLOAD_THRESHOLD, MATCH_THRESHOLD
+from utils.constants import (
+    TIERS,
+    DIVISIONS,
+    HIGH_ELO_LIST,
+    TIER_MATCH_COUNT,
+    S3_UPLOAD_THRESHOLD,
+    MATCH_THRESHOLD,
+)
 
 # Riot API 관련 유틸리티 모듈 임포트
-from utils.riot_util import get_summoner_info_by_tier_division_page, get_high_elo_summoner_info
+from utils.riot_util import (
+    get_summoner_info_by_tier_division_page,
+    get_high_elo_summoner_info,
+)
 
 # 파일 저장 및 로깅 관련 모듈 임포트
 from utils.common_util import upload_to_s3
@@ -43,10 +53,6 @@ limiters = {
         RequestLimiter(max_requests=20, per_seconds=1),
         RequestLimiter(max_requests=100, per_seconds=120),
     ),
-    4: (
-        RequestLimiter(max_requests=20, per_seconds=1),
-        RequestLimiter(max_requests=100, per_seconds=120)
-    )
 }
 
 
@@ -58,16 +64,19 @@ def _wait_for_request(key):
         two_minute_limiter.wait_for_request_slot()
 
         if (
-                one_second_limiter.requests < one_second_limiter.max_requests
-                and two_minute_limiter.requests < two_minute_limiter.max_requests
+            one_second_limiter.requests < one_second_limiter.max_requests
+            and two_minute_limiter.requests < two_minute_limiter.max_requests
         ):
             break
 
 
-def _process_summoner_data(tier, division, page, api_key, redis_conn, processed_ids, key_num, logging):
-
+def _process_summoner_data(
+    tier, division, page, api_key, redis_conn, processed_ids, key_num, logging
+):
     try:
-        json_data = get_summoner_info_by_tier_division_page(tier, division, page, api_key)
+        json_data = get_summoner_info_by_tier_division_page(
+            tier, division, page, api_key
+        )
         _wait_for_request(key_num)  # API 요청 제한 확인
 
         for data in json_data:
@@ -86,8 +95,9 @@ def _process_summoner_data(tier, division, page, api_key, redis_conn, processed_
         time.sleep(1.2)
 
 
-def _process_high_elo_data(high_elo, api_key, redis_conn, processed_ids, key_num, logging):
-
+def _process_high_elo_data(
+    high_elo, api_key, redis_conn, processed_ids, key_num, logging
+):
     try:
         json_data = get_high_elo_summoner_info(high_elo.lower(), api_key)
         _wait_for_request(key_num)
@@ -105,7 +115,9 @@ def _process_high_elo_data(high_elo, api_key, redis_conn, processed_ids, key_num
         segment_length = (today_end_index - today_start_index) // 3
 
         key_num_start_index = today_start_index + segment_length * key_num
-        key_num_end_index = (key_num_start_index + segment_length) if key_num != 2 else today_end_index
+        key_num_end_index = (
+            (key_num_start_index + segment_length) if key_num != 2 else today_end_index
+        )
 
         selected_entries = json_data["entries"][key_num_start_index:key_num_end_index]
 
@@ -118,7 +130,9 @@ def _process_high_elo_data(high_elo, api_key, redis_conn, processed_ids, key_num
                     "summoner_id": summoner_id,
                     "summoner_name": data["summonerName"],
                 }
-                redis_conn.sadd(f"summoner_data_{key_num}", json.dumps(high_elo_summoner_data))
+                redis_conn.sadd(
+                    f"summoner_data_{key_num}", json.dumps(high_elo_summoner_data)
+                )
                 redis_conn.sadd("processed_summoners_ids", summoner_id)
     except KeyError:
         logging.error("API 키 제한")
@@ -137,7 +151,9 @@ def _categorize_tier_data(summoner_ids):
     return tier_data
 
 
-def _process_matches(matches, processed_match_ids, existing_matches, redis_conn, match_list):
+def _process_matches(
+    matches, processed_match_ids, existing_matches, redis_conn, match_list
+):
     unique_matches = [match for match in matches if match not in processed_match_ids]
 
     if unique_matches:
@@ -154,7 +170,6 @@ def _process_matches(matches, processed_match_ids, existing_matches, redis_conn,
 
 
 def _save_to_s3(rows, unique_parquet_name, schema_fields, column_names, s3_folder):
-
     # 동적 스키마 생성
     schema = pa.schema(schema_fields)
 
@@ -171,40 +186,58 @@ def _save_to_s3(rows, unique_parquet_name, schema_fields, column_names, s3_folde
     # S3 업로드
     upload_to_s3(temp_parquet_path, s3_folder, unique_parquet_name)
 
-    logging.info(f"🚀Successfully uploaded {unique_parquet_name} to S3 in folder {s3_folder}.")
+    logging.info(
+        f"🚀Successfully uploaded {unique_parquet_name} to S3 in folder {s3_folder}."
+    )
 
 
 with DAG(
-        dag_id="get_riot_api",
-        schedule_interval=None,
-        # schedule_interval=timedelta(days=1),
-        start_date=datetime(2023, 8, 17),
-        catchup=False,
+    dag_id="get_riot_api",
+    schedule_interval=None,
+    # schedule_interval=timedelta(days=1),
+    start_date=datetime(2023, 8, 17),
+    catchup=False,
 ) as dag:
+
     @task()
     def get_summoners_by_tier(key_num):
         from utils.common_util import setup_task
 
         api_key, redis_conn, logging = setup_task(key_num)
-        processed_summoner_ids = set(member.decode() for member in redis_conn.smembers("processed_summoners_ids"))
+        processed_summoner_ids = set(
+            member.decode() for member in redis_conn.smembers("processed_summoners_ids")
+        )
         logging.info(f"🚀processed_summoner_ids : {len(processed_summoner_ids)}")
 
-        days_since_start = (datetime.now() - datetime(2023, 8, 17)).days  # 작업이 처음 시작된 날짜로부터 지금까지 몇 일이 지났는지 계산
-        start_page = (days_since_start * 4) % 200  # 지난 날 수에 4를 곱하고 200으로 나눈 나머지를 시작 페이지로 설정
+        days_since_start = (
+            datetime.now() - datetime(2023, 8, 17)
+        ).days  # 작업이 처음 시작된 날짜로부터 지금까지 몇 일이 지났는지 계산
+        start_page = (
+            days_since_start * 4
+        ) % 200  # 지난 날 수에 4를 곱하고 200으로 나눈 나머지를 시작 페이지로 설정
         page = start_page + key_num  # 시작 페이지에 key_num을 더해 각 작업에 대한 고유한 페이지 번호 생성
 
         # 각 티어와 디비전 별로 소환사 정보 수집
         for tier in TIERS:
             for division in DIVISIONS:
-                _process_summoner_data(tier, division, page, api_key, redis_conn, processed_summoner_ids, key_num,
-                                       logging)
+                _process_summoner_data(
+                    tier,
+                    division,
+                    page,
+                    api_key,
+                    redis_conn,
+                    processed_summoner_ids,
+                    key_num,
+                    logging,
+                )
 
         # 고위 레벨 소환사 데이터 처리
         for high_elo in HIGH_ELO_LIST:
-            _process_high_elo_data(high_elo, api_key, redis_conn, processed_summoner_ids, key_num, logging)
+            _process_high_elo_data(
+                high_elo, api_key, redis_conn, processed_summoner_ids, key_num, logging
+            )
 
         logging.info(f"😎get_summoners_by_tier finished")
-
 
     @task()
     def get_match_list(key_num):
@@ -215,15 +248,21 @@ with DAG(
         api_key, redis_conn, logging = setup_task(key_num)
 
         existing_match = "processed_match_ids"
-        processed_match_ids = set(member.decode() for member in redis_conn.smembers(existing_match))
+        processed_match_ids = set(
+            member.decode() for member in redis_conn.smembers(existing_match)
+        )
         summoner_part = f"summoner_data_{key_num}"
-        summoner_ids = [json.loads(member.decode()) for member in redis_conn.smembers(summoner_part)]
+        summoner_ids = [
+            json.loads(member.decode()) for member in redis_conn.smembers(summoner_part)
+        ]
         tier_data = _categorize_tier_data(summoner_ids)
 
         logging.info(f"🚀 categorize_tier_data : {len(tier_data)}")
 
         match_list_by_tier = {tier: [] for tier in HIGH_ELO_LIST}
-        match_list_by_tier.update({f"{tier}{division}": [] for tier in TIERS for division in DIVISIONS})
+        match_list_by_tier.update(
+            {f"{tier}{division}": [] for tier in TIERS for division in DIVISIONS}
+        )
 
         is_finished = False
         for tier, summoners in tier_data.items():
@@ -244,23 +283,37 @@ with DAG(
                     summoner["puuid"] = puuid if puuid else None
 
                     if not puuid:
-                        logging.error(f"🚨 Failed to fetch puuid for {summoner['summoner_name']}")
+                        logging.error(
+                            f"🚨 Failed to fetch puuid for {summoner['summoner_name']}"
+                        )
 
-                    matches = get_match_history(puuid, SEVEN_DAYS_AGO_TIMESTAMP, 1, MATCH_THRESHOLD, api_key)
-                    _process_matches(matches, processed_match_ids, existing_match, redis_conn, match_list_by_tier[tier])
+                    matches = get_match_history(
+                        puuid, SEVEN_DAYS_AGO_TIMESTAMP, 1, MATCH_THRESHOLD, api_key
+                    )
+                    _process_matches(
+                        matches,
+                        processed_match_ids,
+                        existing_match,
+                        redis_conn,
+                        match_list_by_tier[tier],
+                    )
 
-                    if all(len(match_list) >= TIER_MATCH_COUNT for match_list in match_list_by_tier.values()):
+                    if all(
+                        len(match_list) >= TIER_MATCH_COUNT
+                        for match_list in match_list_by_tier.values()
+                    ):
                         is_finished = True
                         break
                 except KeyError as e:
-                    logging.warning(f"🚨KeyError가 발생했습니다 ({e}): {summoner['summoner_name']}을(를) 처리하는 중")
+                    logging.warning(
+                        f"🚨KeyError가 발생했습니다 ({e}): {summoner['summoner_name']}을(를) 처리하는 중"
+                    )
                     time.sleep(5)
                 except Exception as e:
                     logging.info(f"🚨예외가 발생했습니다: {e}")
 
         if is_finished:
             logging.info("😎get_match_list finished")
-
 
     @task()
     def extract_match_data(key_num):
@@ -271,13 +324,15 @@ with DAG(
 
         api_key, redis_conn, logging = setup_task(key_num)
 
-        schema_fields = pa.schema([
-            ('tier', pa.string()),
-            ('match_id', pa.string()),
-            ('match_details', pa.string())
-        ])
+        schema_fields = pa.schema(
+            [
+                ("tier", pa.string()),
+                ("match_id", pa.string()),
+                ("match_details", pa.string()),
+            ]
+        )
 
-        column_names = ['tier', 'match_id', 'match_details']
+        column_names = ["tier", "match_id", "match_details"]
 
         if not redis_conn.ping():
             logging.error("🚨Redis 서버에 연결할 수 없습니다.")
@@ -285,7 +340,9 @@ with DAG(
 
         try:
             redis_key = f"match_data_{key_num}"
-            match_data_set = [member.decode() for member in redis_conn.smembers(redis_key)]
+            match_data_set = [
+                member.decode() for member in redis_conn.smembers(redis_key)
+            ]
 
             all_data_key = f"all_data_{key_num}"
             all_data = load_from_redis(redis_conn, all_data_key)
@@ -321,27 +378,45 @@ with DAG(
                 if len(match_detail_rows) >= S3_UPLOAD_THRESHOLD:
                     current_time = datetime.now().strftime("%Y%m%d%H%M%S")
                     batch_count += 1
-                    unique_parquet_name = f"data_{key_num}_{current_time}_batch{batch_count}"
+                    unique_parquet_name = (
+                        f"data_{key_num}_{current_time}_batch{batch_count}"
+                    )
 
-                    logging.info(f"🚀Uploading a batch with {S3_UPLOAD_THRESHOLD} rows as {unique_parquet_name}...")
-                    _save_to_s3(match_detail_rows, unique_parquet_name, schema_fields, column_names, "match")
+                    logging.info(
+                        f"🚀Uploading a batch with {S3_UPLOAD_THRESHOLD} rows as {unique_parquet_name}..."
+                    )
+                    _save_to_s3(
+                        match_detail_rows,
+                        unique_parquet_name,
+                        schema_fields,
+                        column_names,
+                        "match",
+                    )
                     match_detail_rows.clear()  # 메모리를 비움
 
             # for문이 끝난 후 남은 데이터 업로드
             if len(match_detail_rows) > 0:
                 current_time = datetime.now().strftime("%Y%m%d%H%M%S")
                 batch_count += 1
-                unique_parquet_name = f"data_{key_num}_{current_time}_batch{batch_count}_last"
+                unique_parquet_name = (
+                    f"data_{key_num}_{current_time}_batch{batch_count}_last"
+                )
 
                 logging.info(
-                    f"🚀Uploading the last batch with {len(match_detail_rows)} rows as {unique_parquet_name}...")
-                _save_to_s3(match_detail_rows, unique_parquet_name, schema_fields, column_names, "match")
+                    f"🚀Uploading the last batch with {len(match_detail_rows)} rows as {unique_parquet_name}..."
+                )
+                _save_to_s3(
+                    match_detail_rows,
+                    unique_parquet_name,
+                    schema_fields,
+                    column_names,
+                    "match",
+                )
 
             save_to_redis(redis_conn, all_data_key, all_data)
 
         except Exception as e:
             logging.error(f"🚨An unexpected error occurred: {e}")
-
 
     @task
     def get_champion_mastery(key_num):
@@ -352,12 +427,11 @@ with DAG(
 
         api_key, redis_conn, logging = setup_task(key_num)
 
-        schema_fields = pa.schema([
-            ('summoner_id', pa.string()),
-            ('mastery_details', pa.string())
-        ])
+        schema_fields = pa.schema(
+            [("summoner_id", pa.string()), ("mastery_details", pa.string())]
+        )
 
-        column_names = ['summoner_id', 'mastery_details']
+        column_names = ["summoner_id", "mastery_details"]
 
         if not redis_conn.ping():
             logging.error("🚨Redis 서버에 연결할 수 없습니다.")
@@ -390,23 +464,40 @@ with DAG(
             if len(mastery_data_rows) >= S3_UPLOAD_THRESHOLD:
                 current_time = datetime.now().strftime("%Y%m%d%H%M%S")
                 batch_count += 1
-                unique_parquet_name = f"data_{key_num}_{current_time}_batch{batch_count}"
+                unique_parquet_name = (
+                    f"data_{key_num}_{current_time}_batch{batch_count}"
+                )
 
-                logging.info(f"🚀Uploading a batch with {S3_UPLOAD_THRESHOLD} rows as {unique_parquet_name}...")
-                _save_to_s3(mastery_data_rows, unique_parquet_name, schema_fields, column_names, "mastery")
+                logging.info(
+                    f"🚀Uploading a batch with {S3_UPLOAD_THRESHOLD} rows as {unique_parquet_name}..."
+                )
+                _save_to_s3(
+                    mastery_data_rows,
+                    unique_parquet_name,
+                    schema_fields,
+                    column_names,
+                    "mastery",
+                )
                 mastery_data_rows.clear()  # 메모리를 비움
 
         # for문이 끝난 후 남은 데이터 업로드
         if len(mastery_data_rows) > 0:
             current_time = datetime.now().strftime("%Y%m%d%H%M%S")
             batch_count += 1
-            unique_parquet_name = f"data_{key_num}_{current_time}_batch{batch_count}_last"
+            unique_parquet_name = (
+                f"data_{key_num}_{current_time}_batch{batch_count}_last"
+            )
 
             logging.info(
-                f"🚀Uploading the last batch with {len(mastery_data_rows)} rows as {unique_parquet_name}...")
-            _save_to_s3(mastery_data_rows, unique_parquet_name, schema_fields, column_names, "mastery")
-
-
+                f"🚀Uploading the last batch with {len(mastery_data_rows)} rows as {unique_parquet_name}..."
+            )
+            _save_to_s3(
+                mastery_data_rows,
+                unique_parquet_name,
+                schema_fields,
+                column_names,
+                "mastery",
+            )
 
     @task()
     def delete_redis_key():
@@ -420,41 +511,51 @@ with DAG(
             redis_conn.delete(summoner_data_key)
             redis_conn.delete(match_data_key)
 
-
     start = EmptyOperator(task_id="start")
 
     with TaskGroup(group_id="summoners_task_group") as summoners_task_group:
-        #     summoners_task_1 = get_summoners_by_tier(1)
-        #     summoners_task_2 = get_summoners_by_tier(2)
-        #     summoners_task_3 = get_summoners_by_tier(3)
-        summoners_task_4 = get_summoners_by_tier(4)
+        summoners_task_1 = get_summoners_by_tier(1)
+        summoners_task_2 = get_summoners_by_tier(2)
+        summoners_task_3 = get_summoners_by_tier(3)
 
     with TaskGroup(group_id="match_list_task_group") as match_list_task_group:
-        # match_list_task_1 = get_match_list(1)
-        # match_list_task_2 = get_match_list(2)
-        # match_list_task_3 = get_match_list(3)
-        match_list_task_4 = get_match_list(4)
+        match_list_task_1 = get_match_list(1)
+        match_list_task_2 = get_match_list(2)
+        match_list_task_3 = get_match_list(3)
 
     with TaskGroup(group_id="match_extract_group") as match_extract_group:
-        match_extract_task_4 = extract_match_data(4)
+        match_extract_task_1 = extract_match_data(1)
+        match_extract_task_2 = extract_match_data(2)
+        match_extract_task_3 = extract_match_data(3)
 
     with TaskGroup(group_id="mastery_extract_group") as mastery_extract_group:
-        mastery_extract_task_4 = get_champion_mastery(4)
+        mastery_extract_task_1 = get_champion_mastery(1)
+        mastery_extract_task_2 = get_champion_mastery(2)
+        mastery_extract_task_3 = get_champion_mastery(3)
 
     delete_redis_key_task = delete_redis_key()
 
     slack_alert = SlackAlert(channel="#lulu-airflow-alert")
-    match_extract_end = EmptyOperator(task_id="match_extract_end",
-                                      on_success_callback=slack_alert.slack_success_alert,
-                                      on_failure_callback=slack_alert.slack_failure_alert
-                                      )
+    match_extract_end = EmptyOperator(
+        task_id="match_extract_end",
+        on_success_callback=slack_alert.slack_success_alert,
+        on_failure_callback=slack_alert.slack_failure_alert,
+    )
 
-    mastery_extract_end = EmptyOperator(task_id="mastery_extract_end",
-                                      on_success_callback=slack_alert.slack_success_alert,
-                                      on_failure_callback=slack_alert.slack_failure_alert
-                                      )
+    mastery_extract_end = EmptyOperator(
+        task_id="mastery_extract_end",
+        on_success_callback=slack_alert.slack_success_alert,
+        on_failure_callback=slack_alert.slack_failure_alert,
+    )
 
     end = EmptyOperator(task_id="end")
 
     start >> summoners_task_group >> match_list_task_group >> match_extract_group
-    match_extract_group >> match_extract_end >> mastery_extract_group >> mastery_extract_end >> delete_redis_key_task >> end
+    (
+        match_extract_group
+        >> match_extract_end
+        >> mastery_extract_group
+        >> mastery_extract_end
+        >> delete_redis_key_task
+        >> end
+    )

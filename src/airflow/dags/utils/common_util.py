@@ -55,7 +55,7 @@ def convert_milliseconds_to_datetime(milliseconds, format="%Y-%m-%d %H:%M"):
     return date_str
 
 
-def upload_to_s3(file_path, type, file_name, file_type='parquet'):
+def upload_to_s3(file_path, type, file_name, file_type="parquet"):
     import os
     import boto3
     from airflow.models import Variable
@@ -77,7 +77,6 @@ def upload_to_s3(file_path, type, file_name, file_type='parquet'):
         file_path, bucket_name, f"{s3_folder}/{type}/{YMD}/{file_name}.{file_type}"
     )
     os.remove(file_path)
-
 
 
 def setup_task(key_num):

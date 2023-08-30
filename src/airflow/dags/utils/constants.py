@@ -13,4 +13,3 @@ S3_UPLOAD_THRESHOLD = 1000
 
 # 경기 데이터 임계값(최대값=100)
 MATCH_THRESHOLD = 30
-
