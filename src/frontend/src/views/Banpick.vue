@@ -177,7 +177,7 @@ export default {
         this.teamInfo.myLane = this.selectedLaneIndex;
       }
       this.updateRecommendMasteryLane();
-      axios.post('/banpick/produce', this.teamInfo)
+      axios.post('/banpick/produce', this.teamInfo, { timeout: 5000 })
         .then(response => {
           console.log('Data sent successfully', response);
         })
@@ -222,7 +222,7 @@ export default {
     },
     search(){
       this.summonerInfo.summonerName = this.summonerName
-      axios.post('/banpick/search', this.summonerInfo)
+      axios.post('/banpick/search', this.summonerInfo, { timeout: 5000 })
         .then(response => {
           console.log('Data sent successfully', response);
         })
@@ -248,7 +248,7 @@ export default {
         alert('?!!!')
       }
 
-      axios.post('/banpick/produce', this.teamInfo)
+      axios.post('/banpick/produce', this.teamInfo, { timeout: 5000 })
         .then(response => {
           console.log('Data sent successfully', response);
         })
