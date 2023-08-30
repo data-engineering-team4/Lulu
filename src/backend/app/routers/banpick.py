@@ -7,14 +7,21 @@ from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
 import json
-from kinesis.producer import KinesisProducer
+import boto3
 
 router = APIRouter()
 load_dotenv()
 
 kinesis_stream_name = os.environ.get("KINESIS_STREAM_NAME")
-kinesis_producer = KinesisProducer(
-    stream_name=kinesis_stream_name
+print(kinesis_stream_name)
+aws_access_key_id = os.environ.get("AWS_ACCESS_KEY_ID")
+aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+
+client = boto3.client(
+    'kinesis',
+    aws_access_key_id=aws_access_key_id,
+    aws_secret_access_key=aws_secret_access_key,
+    region_name='ap-northeast-3'
 )
 
 
@@ -29,8 +36,10 @@ def get_db():
 @router.post("/banpick/produce")
 async def get_team_info(team_info: TeamInfo):
     print("Received data:", team_info)
-    kinesis_producer.put_record(
-        json.dumps(team_info.dict())
+    response = client.put_record(
+        StreamName=kinesis_stream_name,
+        Data='my_data',
+        PartitionKey='partition_key'
     )
 
     return {"ourTeam": team_info.ourTeam, "opponentTeam": team_info.opponentTeam}
