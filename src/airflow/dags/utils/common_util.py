@@ -84,7 +84,7 @@ def upload_to_s3(file_path, type, file_name, file_type="parquet"):
 def download_single_file(s3, bucket_name, key):
     try:
         s3_object = s3.get_object(Bucket=bucket_name, Key=key)
-        parquet_data = s3_object['Body'].read()
+        parquet_data = s3_object["Body"].read()
         return io.BytesIO(parquet_data)
     except Exception as e:
         logging.error(f"Failed to download {key} due to {e}")
@@ -108,14 +108,28 @@ def download_from_s3(type="match", file_type=".parquet"):
     if type == "mastery":
         sub_folder = RAW_MASTERY_BUCKET
 
-    s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
-    s3_objects = s3.list_objects(Bucket=bucket_name, Prefix=f"{s3_folder}/{sub_folder}/{YMD}")
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+    )
+    s3_objects = s3.list_objects(
+        Bucket=bucket_name, Prefix=f"{s3_folder}/{sub_folder}/{YMD}"
+    )
 
-    if 'Contents' in s3_objects:
-        keys = [obj['Key'] for obj in s3_objects['Contents'] if obj['Key'].endswith(file_type)]
+    if "Contents" in s3_objects:
+        keys = [
+            obj["Key"]
+            for obj in s3_objects["Contents"]
+            if obj["Key"].endswith(file_type)
+        ]
 
         with ThreadPoolExecutor() as executor:
-            parquet_files = list(executor.map(lambda key: download_single_file(s3, bucket_name, key), keys))
+            parquet_files = list(
+                executor.map(
+                    lambda key: download_single_file(s3, bucket_name, key), keys
+                )
+            )
 
         parquet_files = [f for f in parquet_files if f is not None]
 
@@ -126,7 +140,9 @@ def download_from_s3(type="match", file_type=".parquet"):
         logging.info(f"Successfully downloaded {len(parquet_files)} files.")
         return parquet_files
     else:
-        logging.info(f"No files found in the specified S3 location. ({s3_folder}/{sub_folder}/{YMD})")
+        logging.info(
+            f"No files found in the specified S3 location. ({s3_folder}/{sub_folder}/{YMD})"
+        )
         return []
 
 
