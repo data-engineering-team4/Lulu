@@ -524,15 +524,18 @@ with DAG(
         summoners_task_2 = get_summoners_by_tier(2)
         summoners_task_3 = get_summoners_by_tier(3)
 
+
     with TaskGroup(group_id="match_list_task_group") as match_list_task_group:
         match_list_task_1 = get_match_list(1)
         match_list_task_2 = get_match_list(2)
         match_list_task_3 = get_match_list(3)
 
+
     with TaskGroup(group_id="match_extract_group") as match_extract_group:
         match_extract_task_1 = extract_match_data(1)
         match_extract_task_2 = extract_match_data(2)
         match_extract_task_3 = extract_match_data(3)
+
 
     with TaskGroup(group_id="mastery_extract_group") as mastery_extract_group:
         mastery_extract_task_1 = get_champion_mastery(1)

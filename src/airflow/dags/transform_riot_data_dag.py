@@ -140,6 +140,7 @@ def _expand_row(row):
     # Scalar 값으로 되어 있는 컬럼들
     scalar_columns = ["patch", "tier", "match_id"]
 
+
     # 새로운 row들을 저장할 리스트
     new_rows = []
 
@@ -168,6 +169,7 @@ def _expand_row(row):
 
 def _load_mastery_details(row, champion_dict):
     tmp_str = row["mastery_details"]
+
     try:
         tmp = json.loads(tmp_str) if tmp_str is not None else []
     except json.JSONDecodeError as e:
@@ -175,6 +177,7 @@ def _load_mastery_details(row, champion_dict):
         return None
 
     data = {"id": row["summoner_id"]}
+
 
     for key in champion_dict.keys():
         if key != "id":
@@ -213,7 +216,6 @@ with DAG(
     start_date=datetime(2023, 8, 29),
     catchup=False,
 ) as dag:
-
     @task()
     def transform_match_data():
         from utils.common_util import download_from_s3, upload_to_s3
@@ -277,6 +279,7 @@ with DAG(
                 del merged_dataframe
                 gc.collect()  # 메모리 절약 - 가비지 컬렉션 실행
 
+
     @task()
     def transform_mastery_data():
         from utils.common_util import download_from_s3, upload_to_s3
@@ -330,6 +333,7 @@ with DAG(
                             f"transformed_mastery_data_chunk_{i}",
                             file_type="csv",
                         )
+
                 except Exception as e:
                     logging.error(f"🚨 Error during file operation: {e}")
                 finally:
