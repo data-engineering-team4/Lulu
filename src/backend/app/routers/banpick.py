@@ -56,7 +56,6 @@ def get_db():
 
 @router.post("/banpick/produce")
 async def get_team_info(team_info: TeamInfo):
-    print("Received data:", team_info)
     my_lane = lane_mapping.get(team_info.myLane+1)
     our_team = {}
     opponent_team = {}
@@ -71,24 +70,28 @@ async def get_team_info(team_info: TeamInfo):
         new_champ = champion_mapping.get(champ_id+1)
         opponent_team[new_lane] = new_champ
 
-    transformed_data = {
-        'myLane': my_lane,
-        'ourTeam': our_team,
-        'opponentTeam': opponent_team
-    }
-    json_data = json.dumps(transformed_data)
+    print("Received data:", my_lane, our_team, opponent_team)
 
-    try:
-        response = client.put_record(
-            StreamName=kinesis_stream_name,
-            Data=json_data,
-            PartitionKey="partition_key",
-        )
-    except Exception as e:
-        print("Kinesis Error", e)
-        return {"error": str(e)}
+    if my_lane != "ALL" and (our_team or opponent_team):
+        print("good")
+        transformed_data = {
+            'myLane': my_lane,
+            'ourTeam': our_team,
+            'opponentTeam': opponent_team
+        }
+        json_data = json.dumps(transformed_data)
 
-    return {"ourTeam": team_info.ourTeam, "opponentTeam": team_info.opponentTeam}
+        try:
+            response = client.put_record(
+                StreamName=kinesis_stream_name,
+                Data=json_data,
+                PartitionKey="partition_key",
+            )
+        except Exception as e:
+            print("Kinesis Error", e)
+            return {"error": str(e)}
+
+    return {"myLane": my_lane, "ourTeam": our_team, "opponentTeam": opponent_team}
 
 
 @router.post("/banpick/search")
