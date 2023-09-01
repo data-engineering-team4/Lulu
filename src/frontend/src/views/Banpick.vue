@@ -3,9 +3,16 @@
     <div class="ban-pick-page">
       <div class="ban-pick-board">
         <div class="title-section">
-         <div class="custom-light-font" style="display: inline-block;">BanPick&nbsp;</div>
-         <div class="custom-font" style="display: inline-block;">DashBoard&nbsp;&nbsp;&nbsp;</div>
-          <div class="real-time custom-light-font">&nbsp;&nbsp;&nbsp;real-time&nbsp;recommend&nbsp;&nbsp;&nbsp;&nbsp;</div>
+          <div class="custom-light-font" style="display: inline-block;">BanPick&nbsp;</div>
+          <div class="custom-font" style="display: inline-block;">DashBoard&nbsp;&nbsp;&nbsp;</div>
+          <div class="sectionButton">
+            <div v-if="showSection == false" class="sectionButton1" @click="showRecommendSection">
+              분석으로 전환
+            </div>
+            <div v-else class="sectionButton2" @click="showRecommendSection">
+              티어로 전환
+            </div>
+          </div>
         </div>
         <div class="section">
           <div class="left-section">
@@ -38,7 +45,7 @@
             <div class="button-container">
               <div class = "filter">
                 <button class="button1" :class="{ active: buttons[0] }" @click="toggleButton(0)">
-                  <img src="@/assets/top.png" style="max-width: 100%; max-height: 100%;" />
+                  <img src="@/assets/bottom.png" style="max-width: 100%; max-height: 100%;" />
                 </button>
                 <button class="button1" :class="{ active: buttons[1] }" @click="toggleButton(1)">
                   <img src="@/assets/jug.png" style="max-width: 100%; max-height: 100%;" />
@@ -47,7 +54,7 @@
                   <img src="@/assets/mid.png" style="max-width: 100%; max-height: 100%;" />
                 </button>
                 <button class="button1" :class="{ active: buttons[3] }" @click="toggleButton(3)">
-                  <img src="@/assets/bottom.png" style="max-width: 100%; max-height: 100%;" />
+                  <img src="@/assets/top.png" style="max-width: 100%; max-height: 100%;" />
                 </button>
                 <button class="button1" :class="{ active: buttons[4] }" @click="toggleButton(4)">
                   <img src="@/assets/sup.png" style="max-width: 100%; max-height: 100%;" />
@@ -57,7 +64,68 @@
                 <h5 class="custom-font" style="color: #9752ff; text-align: center;">챔피언을 선택하세요!</h5>
               </div>
               <div class = "tier">
-                <button v-for="(buttonText, index) in buttons" :key="index" class="button2">{{ buttonText }}</button>
+                <div class="custom-dropdown" @click="toggleDropdown">
+                  <div v-if="selectedTier" class="selected-tier tier-item">
+                    <img v-if="selectedTier === 'challenger'" src="@/assets/tier/challenger.webp" class="tier-icon" />
+                    <img v-if="selectedTier === 'grandmaster'" src="@/assets/tier/grandmaster.webp" class="tier-icon" />
+                    <img v-if="selectedTier === 'master'" src="@/assets/tier/master.webp" class="tier-icon" />
+                    <img v-if="selectedTier === 'diamond'" src="@/assets/tier/diamond.webp" class="tier-icon" />
+                    <img v-if="selectedTier === 'emerald'" src="@/assets/tier/emerald.webp" class="tier-icon" />
+                    <img v-if="selectedTier === 'platinum'" src="@/assets/tier/platinum.webp" class="tier-icon" />
+                    <img v-if="selectedTier === 'gold'" src="@/assets/tier/gold.webp" class="tier-icon" />
+                    <img v-if="selectedTier === 'silver'" src="@/assets/tier/silver.webp" class="tier-icon" />
+                    <img v-if="selectedTier === 'bronze'" src="@/assets/tier/bronze.webp" class="tier-icon" />
+                    <img v-if="selectedTier === 'iron'" src="@/assets/tier/iron.webp" class="tier-icon" />
+                    <span v-if="selectedTier === 'all'" class="tier-text0" style="margin-top: 2%; ">{{ capitalizeFirstLetter }}</span>
+                    <span v-else class="tier-text" style="">{{ capitalizeFirstLetter }}</span>
+                  </div>
+                  <div v-else class="placeholder">티어를 선택하세요!</div>
+                  <ul v-show="isDropdownOpen" class="dropdown-options">
+                    <li @click="selectTier('all')" class="tier-item">
+                      <span class="tier-text0">All</span>
+                    </li>
+                    <li @click="selectTier('challenger')" class="tier-item">
+                      <img src="@/assets/tier/challenger.webp" class="tier-icon" />
+                      <span class="tier-text">Challenger</span>
+                    </li>
+                    <li @click="selectTier('grandmaster')" class="tier-item">
+                      <img src="@/assets/tier/grandmaster.webp" class="tier-icon" />
+                      <span class="tier-text">Grandmaster</span>
+                    </li>
+                    <li @click="selectTier('master')" class="tier-item">
+                      <img src="@/assets/tier/master.webp" class="tier-icon" />
+                      <span class="tier-text">Master</span>
+                    </li>
+                    <li @click="selectTier('diamond')" class="tier-item">
+                      <img src="@/assets/tier/diamond.webp" class="tier-icon" />
+                      <span class="tier-text">Diamond</span>
+                    </li>
+                    <li @click="selectTier('emerald')" class="tier-item">
+                      <img src="@/assets/tier/emerald.webp" class="tier-icon" />
+                      <span class="tier-text">Emerald</span>
+                    </li>
+                    <li @click="selectTier('platinum')" class="tier-item">
+                      <img src="@/assets/tier/platinum.webp" class="tier-icon" />
+                      <span class="tier-text">Platinum</span>
+                    </li>
+                    <li @click="selectTier('gold')" class="tier-item">
+                      <img src="@/assets/tier/gold.webp" class="tier-icon" />
+                      <span class="tier-text">Gold</span>
+                    </li>
+                    <li @click="selectTier('silver')" class="tier-item">
+                      <img src="@/assets/tier/silver.webp" class="tier-icon" />
+                      <span class="tier-text">Silver</span>
+                    </li>
+                    <li @click="selectTier('bronze')" class="tier-item">
+                      <img src="@/assets/tier/bronze.webp" class="tier-icon" />
+                      <span class="tier-text">Bronze</span>
+                    </li>
+                    <li @click="selectTier('iron')" class="tier-item">
+                      <img src="@/assets/tier/iron.webp" class="tier-icon" />
+                      <span class="tier-text">Iron</span>
+                    </li>
+                  </ul>
+                </div>
               </div>               
             </div>
           </div>
@@ -87,7 +155,7 @@
                 </div>
                 <div class="recommend-mastery-second">
                   <div class="recommend-mastery-lane">
-                     <img class="mastery-lane" :src="recommendMasteryLaneContent ? require('@/assets/' + recommendMasteryLaneContent) : require('@/assets/unselect.png')" />
+                    <img class="mastery-lane" :src="recommendMasteryLaneContent ? require('@/assets/' + recommendMasteryLaneContent) : require('@/assets/unselect.png')" />
                   </div>
                   <div class="recommend-mastery-all">
                     <p v-if="championMastery.length > 0"></p>
@@ -121,7 +189,7 @@
                   </div>
                 </div>
               </div>
-              <div class="recommend-section-table">
+              <div v-if="showSection" class="recommend-section-table">
                 <div class="recommend-section-first">
                   <div class="recommend-section-opponent-lane">
                     <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 2%;">상대 라이너</h3>
@@ -142,6 +210,9 @@
                     <div class="recommend-section-part">챔피언초상화,이름,티어 3개 숙련도 고려</div>
                   </div>
                 </div>
+              </div>
+              <div v-else class="recommend-section-table">
+
               </div>
             </div>
           </div>
@@ -209,7 +280,10 @@ export default {
       championMid: {},
       championBot: {},
       championSup: {},
-      selectMastery: []
+      selectMastery: [],
+      selectedTier: 'all',
+      isDropdownOpen: false,
+      showSection: false
     };
   },
   watch: {
@@ -232,12 +306,24 @@ export default {
       if (index == 5) {
         this.selectMastery = this.masteryName;
       }
+    },
+    selectTier(tier) {
+      if (this.selectedTier == tier) {
+        this.isDropdownOpen = false;
+      }
     }
   },
   computed: {
     ...mapState('box', ['selectedBox', 'selectedImage']),
     isSubmitEnabled() {
       return this.selectedBox && this.selectedImage;
+    },
+    capitalizeFirstLetter() {
+      if (this.selectedTier) {
+        return this.selectedTier.charAt(0).toUpperCase() + this.selectedTier.slice(1);
+      } else {
+        return "";
+      }
     }
   },
   methods: {
@@ -333,6 +419,19 @@ export default {
         this.userLane = 5;
       } else {
         this.userLane = index;
+      }
+    },
+    toggleDropdown() {
+      this.isDropdownOpen = !this.isDropdownOpen;
+    },
+    selectTier(tier) {
+      this.selectedTier = tier;
+    },
+    showRecommendSection() {
+      if (this.showSection == true) {
+        this.showSection = false
+      } else {
+        this.showSection = true
       }
     },
     search() {
@@ -479,21 +578,36 @@ export default {
                -1px -1px 2px #ffffff;
 }
 .title-section {
-  display: block;
+  display: flex;
   text-align: left;
   padding: 2% 0% 0% 3%;
   font-size: 30px;
   font-weight: 500;
   color: #9752ff;
+  align-items: center;
 }
-.real-time{
-  display: inline-block;
+.sectionButton {
+  display: flex;
+}
+.sectionButton1{
+  width: 150px;
   font-size: 20px;
-  border-radius: 25px;
-background: #eeeeee;
-box-shadow: inset 5px 5px 3px #b7b7b7,
-            inset -5px -5px 3px #ffffff;
+  border-radius: 10px;
+  background: #eeeeee;
+  box-shadow: 3px 3px 1px #b7b7b7,
+              -3px -3px 1px #ffffff;
   padding: 5px;
+  text-align: center;
+}
+.sectionButton2{
+  width: 150px;
+  font-size: 20px;
+  border-radius: 10px;
+  background: #eeeeee;
+  box-shadow: inset 3px 3px 1px #b7b7b7,
+              inset -3px -3px 1px #ffffff;
+  padding: 5px;
+  text-align: center;
 }
 .section {
   display: flex;
@@ -661,7 +775,7 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
 .recommend-section{
   width: 25vw;
   height: 100%;
-  //background-color: black;
+  /* background-color: black; */
   justify-content: center;
 
 }
@@ -886,14 +1000,61 @@ box-shadow:  5px 5px 3px #b7b7b7,
   box-shadow: inset 1px 1px 2px #d1d1d1, inset -1px -1px 2px #ffffff;
 }
 
-.button2 {
-  background: #eeeeee;
-  box-shadow:  2px 2px 1px #b7b7b7,
-              -2px -2px 1px #ffffff;
-  border: none;
-  border-radius: 5px;
+.custom-dropdown {
+  position: relative;
+  display: inline-block;
   cursor: pointer;
-  width: 20%;
+  border: 1px solid #ccc;
+  padding: 1%;
+  background: #eeeeee;
+  width: 100%;
+  height: 70%;
 }
 
+.custom-dropdown:hover {
+  border-color: #999;
+}
+
+.dropdown-options {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #ccc;
+  border-top: none;
+  width: 100%;
+  background-color: #f0f0f0;
+  position: absolute;
+  top: 100%;
+  left: 0;
+}
+
+.dropdown-options li {
+  cursor: pointer;
+  border: 1px solid #ccc;
+}
+
+.dropdown-options li:hover {
+  background-color: #e1dede;
+}
+
+.tier-item {
+  display: flex;
+  align-items: center;
+}
+
+.tier-icon {
+  width: 18%;
+  height: 18%;
+  margin-left: 5%;
+}
+
+.tier-text0 {
+  margin-top: 3%;
+  margin-bottom: 3%;
+  flex-grow: 1;
+}
+.tier-text {
+  margin-right: 5%;
+  flex-grow: 1;
+}
 </style>
