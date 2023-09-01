@@ -2,6 +2,7 @@ import json
 import boto3
 import time
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 
 
 def fetch_from_s3(bucket, key):
@@ -59,7 +60,23 @@ def process_team_data(team, query_list, my_lane, flag):
         filtered_data.createOrReplaceTempView("opponent_filtered_data")
 
     team_summary = spark.sql(team_summary_query.format(my_lane=my_lane))
-    team_summary.show()
+    team_summary = team_summary.withColumn("my_lane", F.lit(my_lane))
+
+    champion_positions = {
+        "top": top_champ,
+        "jungle": jungle_champ,
+        "middle": middle_champ,
+        "bottom": bottom_champ,
+        "utility": utility_champ
+    }
+
+    for position, champ in champion_positions.items():
+        if champ != "???":
+            team_summary = team_summary.withColumn(position, F.lit(champ))
+    if flag == 0:
+        team_summary.write.jdbc(jdbc_url, "our_team", mode="overwrite", properties=properties)
+    else:
+        team_summary.write.jdbc(jdbc_url, "opponent_team", mode="overwrite", properties=properties)
 
 
 def recommend(my_lane, our_team, opponent_team):
@@ -67,7 +84,6 @@ def recommend(my_lane, our_team, opponent_team):
 
     if our_team:
         process_team_data(our_team, query_list[:3], my_lane, 0)
-        print("😋", my_lane, our_team, opponent_team)
 
     if opponent_team:
         opponent_champ = opponent_team.get(my_lane, "???")
@@ -83,11 +99,10 @@ def recommend(my_lane, our_team, opponent_team):
             filtered_data = spark.sql(filter_opponent_lane_query)
             filtered_data.createOrReplaceTempView("opponent_lane_filtered_data")
             team_summary = spark.sql(counter_team_summary_query.format(my_lane=my_lane))
-            team_summary.show()
-            print("😋😋😋😋", my_lane, our_team, opponent_team)
+            team_summary = team_summary.withColumn("my_lane", F.lit(my_lane))
+            team_summary.write.jdbc(jdbc_url, "opponent_lane", mode="overwrite", properties=properties)
 
         process_team_data(opponent_team, query_list[3:6], my_lane, 1)
-        print("😋😋", my_lane, our_team, opponent_team)
 
     if our_team and opponent_team:
         filter_all_team_query = query_list[6]
@@ -98,8 +113,20 @@ def recommend(my_lane, our_team, opponent_team):
         all_filtered_data.show()
 
         all_team_summary = spark.sql(all_team_summary_query.format(my_lane=my_lane))
-        all_team_summary.show()
-        print("😋😋😋", my_lane, our_team, opponent_team)
+
+        positions = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"]
+
+        for position in positions:
+            champ = our_team.get(position, None)
+            if champ is not None:
+                all_team_summary = all_team_summary.withColumn(f"our_{position.lower()}", F.lit(champ))
+
+            champ = opponent_team.get(position, None)
+            if champ is not None:
+                all_team_summary = all_team_summary.withColumn(f"opponent_{position.lower()}", F.lit(champ))
+
+        all_team_summary = all_team_summary.withColumn("my_lane", F.lit(my_lane))
+        all_team_summary.write.jdbc(jdbc_url, "all_team", mode="overwrite", properties=properties)
 
 
 if __name__ == "__main__":
