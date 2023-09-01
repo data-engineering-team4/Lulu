@@ -95,6 +95,7 @@ async def get_team_info(team_info: TeamInfo):
 
     return {"myLane": my_lane, "ourTeam": our_team, "opponentTeam": opponent_team}
 
+
 @router.post("/banpick/search")
 async def get_summoner_name(summoner_info: SummonerInfo, db: Session = Depends(get_db)):
     print("Received data:", summoner_info)
@@ -103,5 +104,8 @@ async def get_summoner_name(summoner_info: SummonerInfo, db: Session = Depends(g
     db_summoner = create_summoner(db, db_summoner)
 
     champion_mastery = get_champion_mastery_by_name(summoner_info.summonerName, api_key)
-    
-    return {"summonerName": db_summoner.summonerName, "championMastery": champion_mastery}
+
+    return {
+        "summonerName": db_summoner.summonerName,
+        "championMastery": champion_mastery,
+    }
