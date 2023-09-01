@@ -57,6 +57,8 @@ def convert_milliseconds_to_datetime(milliseconds, format="%Y-%m-%d %H:%M"):
     return date_str
 
 
+# TODO boto.client3 전역 변수로 빼기
+# TODO 2개는 되고 하나는 안되는 이유 -> ECS (성능 문제)
 def upload_to_s3(file_path, type, file_name, file_type="parquet"):
     import os
     import boto3
@@ -160,8 +162,13 @@ def setup_task(key_num):
     return api_key, redis_conn, logging
 
 
-def save_to_redis(redis_conn, key, data):
-    redis_conn.set(key, data)
+def verify_data_in_redis(redis_conn, key):
+    data_bytes = redis_conn.get(key)
+    if data_bytes:
+        logging.info(f"Data exists for key: {key}")
+        logging.info(f"Data: {data_bytes.decode('utf-8')}")
+    else:
+        logging.warning(f"No data found for key: {key}")
 
 
 def load_from_redis(redis_conn, key):
