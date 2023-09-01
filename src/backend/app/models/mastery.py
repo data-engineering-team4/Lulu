@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String
 from ..db_session import Base
 
+
 class Mastery(Base):
     __tablename__ = "mastery"
     champion_name = Column(String, index=True, primary_key=True)

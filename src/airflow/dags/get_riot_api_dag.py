@@ -154,12 +154,14 @@ with DAG(
                         summoner_id = data["summonerId"]
 
                         if summoner_id not in processed_summoner_ids:
-                            summoner_data = json.dumps({
-                                "tier": tier,
-                                "division": division,
-                                "summoner_id": summoner_id,
-                                "summoner_name": data["summonerName"],
-                            })
+                            summoner_data = json.dumps(
+                                {
+                                    "tier": tier,
+                                    "division": division,
+                                    "summoner_id": summoner_id,
+                                    "summoner_name": data["summonerName"],
+                                }
+                            )
 
                             redis_conn.sadd(f"summoner_data_{key_num}", summoner_data)
                             redis_conn.sadd(existing_user, summoner_id)
@@ -181,7 +183,9 @@ with DAG(
                 today_start_index = (current_day_of_week * json_data_length) // 7
 
                 if current_day_of_week != 6:
-                    today_end_index = ((current_day_of_week + 1) * json_data_length) // 7
+                    today_end_index = (
+                        (current_day_of_week + 1) * json_data_length
+                    ) // 7
                 else:
                     today_end_index = json_data_length
 
@@ -189,21 +193,29 @@ with DAG(
 
                 key_num_start_index = today_start_index + segment_length * key_num
                 key_num_end_index = (
-                    (key_num_start_index + segment_length) if key_num != 2 else today_end_index
+                    (key_num_start_index + segment_length)
+                    if key_num != 2
+                    else today_end_index
                 )
 
-                selected_entries = json_data["entries"][key_num_start_index:key_num_end_index]
+                selected_entries = json_data["entries"][
+                    key_num_start_index:key_num_end_index
+                ]
 
                 for data in selected_entries:
                     summoner_id = data["summonerId"]
                     if summoner_id not in processed_summoner_ids:
-                        high_elo_summoner_data = json.dumps({
-                            "tier": high_elo,
-                            "division": "0",
-                            "summoner_id": summoner_id,
-                            "summoner_name": data["summonerName"],
-                        })
-                        redis_conn.sadd(f"summoner_data_{key_num}", high_elo_summoner_data)
+                        high_elo_summoner_data = json.dumps(
+                            {
+                                "tier": high_elo,
+                                "division": "0",
+                                "summoner_id": summoner_id,
+                                "summoner_name": data["summonerName"],
+                            }
+                        )
+                        redis_conn.sadd(
+                            f"summoner_data_{key_num}", high_elo_summoner_data
+                        )
                         redis_conn.sadd("processed_summoners_ids", summoner_id)
             except KeyError:
                 logging.error("API 키 제한")
@@ -231,7 +243,9 @@ with DAG(
 
         logging.info(f"🔍 {summoner_ids}")
 
-        logging.info(f" processed_match_ids : {len(processed_match_ids)} / summoner_data_{key_num} : {len(summoner_part)}")
+        logging.info(
+            f" processed_match_ids : {len(processed_match_ids)} / summoner_data_{key_num} : {len(summoner_part)}"
+        )
 
         tier_data = _categorize_tier_data(summoner_ids)
 
@@ -255,7 +269,10 @@ with DAG(
                     logging.info(f"🚀{tier}는 이미 충분한 데이터를 수집했습니다. 다음 tier로 넘어갑니다.")
                     break
 
-                if all(len(match_list) >= TIER_MATCH_COUNT for match_list in match_list_by_tier.values()):
+                if all(
+                    len(match_list) >= TIER_MATCH_COUNT
+                    for match_list in match_list_by_tier.values()
+                ):
                     is_finished = True
                     logging.info(f"🚀모든 데이터를 수집했습니다...")
                     break
@@ -275,19 +292,30 @@ with DAG(
                         puuid, SEVEN_DAYS_AGO_TIMESTAMP, 1, MATCH_THRESHOLD, api_key
                     )
 
-                    unique_matches = [match for match in matches if match not in processed_match_ids]
+                    unique_matches = [
+                        match for match in matches if match not in processed_match_ids
+                    ]
 
                     if unique_matches:
-                        if len(match_list_by_tier[tier]) + len(matches) > TIER_MATCH_COUNT:
-                            needed_matches = TIER_MATCH_COUNT - len(match_list_by_tier[tier])
+                        if (
+                            len(match_list_by_tier[tier]) + len(matches)
+                            > TIER_MATCH_COUNT
+                        ):
+                            needed_matches = TIER_MATCH_COUNT - len(
+                                match_list_by_tier[tier]
+                            )
                             match_list_by_tier[tier].extend(matches[:needed_matches])
-                            match_ids_to_add = [match for match in unique_matches[:needed_matches]]
+                            match_ids_to_add = [
+                                match for match in unique_matches[:needed_matches]
+                            ]
                             processed_match_ids.update(match_ids_to_add)
                             redis_conn.sadd(existing_match, *match_ids_to_add)
                         else:
                             match_list_by_tier[tier].extend(matches)
                             match_ids_to_add = [match for match in unique_matches]
-                            processed_match_ids.update([match for match in unique_matches])
+                            processed_match_ids.update(
+                                [match for match in unique_matches]
+                            )
                             redis_conn.sadd(existing_match, *match_ids_to_add)
 
                 except KeyError as e:
@@ -512,18 +540,15 @@ with DAG(
         summoners_task_2 = get_summoners_by_tier(2)
         summoners_task_3 = get_summoners_by_tier(3)
 
-
     with TaskGroup(group_id="match_list_task_group") as match_list_task_group:
         match_list_task_1 = get_match_list(1)
         match_list_task_2 = get_match_list(2)
         match_list_task_3 = get_match_list(3)
 
-
     with TaskGroup(group_id="match_extract_group") as match_extract_group:
         match_extract_task_1 = extract_match_data(1)
         match_extract_task_2 = extract_match_data(2)
         match_extract_task_3 = extract_match_data(3)
-
 
     with TaskGroup(group_id="mastery_extract_group") as mastery_extract_group:
         mastery_extract_task_1 = get_champion_mastery(1)

@@ -32,17 +32,14 @@ with DAG(
                 try:
                     df = pd.read_csv(csv_file)
                     dataframes[csv_file] = df
-                    logging.info(
-                        f"🚀Successfully read {csv_file}.")
+                    logging.info(f"🚀Successfully read {csv_file}.")
                 except Exception as e:
-                    logging.error(
-                        f"🚨Failed to read a csv file {csv_file} due to {e}"
-                    )
+                    logging.error(f"🚨Failed to read a csv file {csv_file} due to {e}")
 
             origin_df = pd.concat(dataframes)
-            logging.info(f"🚀Successfully concat csv_files. Origin DataFrame shape: {origin_df.shape}.")
-
-
+            logging.info(
+                f"🚀Successfully concat csv_files. Origin DataFrame shape: {origin_df.shape}."
+            )
 
     start = EmptyOperator(task_id="start")
 

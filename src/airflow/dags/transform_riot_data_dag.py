@@ -91,7 +91,9 @@ def _extract_match_details(row):
 
             # load champion mapping data
             script_path = os.path.dirname(os.path.abspath(__file__))
-            json_file_path = os.path.join(script_path, "utils", "champion_dictionary.json")
+            json_file_path = os.path.join(
+                script_path, "utils", "champion_dictionary.json"
+            )
             with open(json_file_path, "r") as f:
                 champion_dict = json.load(f)
 
@@ -143,7 +145,6 @@ def _expand_row(row):
     # Scalar 값으로 되어 있는 컬럼들
     scalar_columns = ["patch", "tier", "match_id"]
 
-
     # 새로운 row들을 저장할 리스트
     new_rows = []
 
@@ -180,7 +181,6 @@ def _load_mastery_details(row, champion_dict):
         return None
 
     data = {"id": row["summoner_id"]}
-
 
     for key in champion_dict.keys():
         if key != "id":
@@ -219,6 +219,7 @@ with DAG(
     start_date=datetime(2023, 8, 29),
     catchup=False,
 ) as dag:
+
     @task()
     def transform_match_data():
         from utils.common_util import download_from_s3, upload_to_s3
