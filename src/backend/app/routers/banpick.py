@@ -24,7 +24,7 @@ client = boto3.client(
 )
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-with open(os.path.join(dir_path, 'champions.json'), 'r') as f:
+with open(os.path.join(dir_path, "champions.json"), "r") as f:
     champion_data = json.load(f)
 
 champion_mapping = {}
@@ -42,7 +42,7 @@ lane_mapping = {
     7: "JUNGLE",
     8: "MIDDLE",
     9: "BOTTOM",
-    10: "UTILITY"
+    10: "UTILITY",
 }
 
 
@@ -56,18 +56,18 @@ def get_db():
 
 @router.post("/banpick/produce")
 async def get_team_info(team_info: TeamInfo):
-    my_lane = lane_mapping.get(team_info.myLane+1)
+    my_lane = lane_mapping.get(team_info.myLane + 1)
     our_team = {}
     opponent_team = {}
 
     for lane, champ_id in team_info.ourTeam.items():
         new_lane = lane_mapping.get(int(lane))
-        new_champ = champion_mapping.get(champ_id+1)
+        new_champ = champion_mapping.get(champ_id + 1)
         our_team[new_lane] = new_champ
 
     for lane, champ_id in team_info.opponentTeam.items():
         new_lane = lane_mapping.get(int(lane))
-        new_champ = champion_mapping.get(champ_id+1)
+        new_champ = champion_mapping.get(champ_id + 1)
         opponent_team[new_lane] = new_champ
 
     print("Received data:", my_lane, our_team, opponent_team)
@@ -75,9 +75,9 @@ async def get_team_info(team_info: TeamInfo):
     if my_lane != "ALL" and (our_team or opponent_team):
         print("good")
         transformed_data = {
-            'myLane': my_lane,
-            'ourTeam': our_team,
-            'opponentTeam': opponent_team
+            "myLane": my_lane,
+            "ourTeam": our_team,
+            "opponentTeam": opponent_team,
         }
         json_data = json.dumps(transformed_data)
 

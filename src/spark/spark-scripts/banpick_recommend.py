@@ -35,18 +35,20 @@ def process_team_data(team, query_list, my_lane, flag):
     bottom_champ = team.get("BOTTOM", "???")
     utility_champ = team.get("UTILITY", "???")
 
-    matching_games = spark.sql(find_team_query.format(
-        top_champ=top_champ,
-        jungle_champ=jungle_champ,
-        middle_champ=middle_champ,
-        bottom_champ=bottom_champ,
-        utility_champ=utility_champ,
-        top_operator=get_operator(top_champ),
-        jungle_operator=get_operator(jungle_champ),
-        middle_operator=get_operator(middle_champ),
-        bottom_operator=get_operator(bottom_champ),
-        utility_operator=get_operator(utility_champ)
-    ))
+    matching_games = spark.sql(
+        find_team_query.format(
+            top_champ=top_champ,
+            jungle_champ=jungle_champ,
+            middle_champ=middle_champ,
+            bottom_champ=bottom_champ,
+            utility_champ=utility_champ,
+            top_operator=get_operator(top_champ),
+            jungle_operator=get_operator(jungle_champ),
+            middle_operator=get_operator(middle_champ),
+            bottom_operator=get_operator(bottom_champ),
+            utility_operator=get_operator(utility_champ),
+        )
+    )
     if flag == 0:
         matching_games.createOrReplaceTempView("our_matching_games")
         filtered_data = spark.sql(filter_team_query)
@@ -56,9 +58,7 @@ def process_team_data(team, query_list, my_lane, flag):
         filtered_data = spark.sql(filter_team_query)
         filtered_data.createOrReplaceTempView("opponent_filtered_data")
 
-    team_summary = spark.sql(team_summary_query.format(
-        my_lane=my_lane
-    ))
+    team_summary = spark.sql(team_summary_query.format(my_lane=my_lane))
     team_summary.show()
 
 
@@ -76,16 +76,13 @@ def recommend(my_lane, our_team, opponent_team):
             filter_opponent_lane_query = query_list[9]
             counter_team_summary_query = query_list[10]
 
-            matching_games = spark.sql(find_opponent_lane_query.format(
-                my_lane=my_lane,
-                champ=opponent_champ
-            ))
+            matching_games = spark.sql(
+                find_opponent_lane_query.format(my_lane=my_lane, champ=opponent_champ)
+            )
             matching_games.createOrReplaceTempView("opponent_lane_matching_games")
             filtered_data = spark.sql(filter_opponent_lane_query)
             filtered_data.createOrReplaceTempView("opponent_lane_filtered_data")
-            team_summary = spark.sql(counter_team_summary_query.format(
-                my_lane=my_lane
-            ))
+            team_summary = spark.sql(counter_team_summary_query.format(my_lane=my_lane))
             team_summary.show()
             print("😋😋😋😋", my_lane, our_team, opponent_team)
 
@@ -100,9 +97,7 @@ def recommend(my_lane, our_team, opponent_team):
         all_filtered_data.createOrReplaceTempView("combined_filtered_data")
         all_filtered_data.show()
 
-        all_team_summary = spark.sql(all_team_summary_query.format(
-            my_lane=my_lane
-        ))
+        all_team_summary = spark.sql(all_team_summary_query.format(my_lane=my_lane))
         all_team_summary.show()
         print("😋😋😋", my_lane, our_team, opponent_team)
 
@@ -116,14 +111,24 @@ if __name__ == "__main__":
     query_bucket_name = "de-4-2-spark"
 
     adhoc_data_path = f"s3://{adhoc_bucket_name}/data/adhoc_match/merged.csv"
-    data_spark = spark.read.csv(adhoc_data_path, header=True, inferSchema=True).repartition(8)
+    data_spark = spark.read.csv(
+        adhoc_data_path, header=True, inferSchema=True
+    ).repartition(8)
 
     check_start = time.time()
-    query_key_list = ["find_our_team.sql", "filter_our_team.sql", "recommend_our_team.sql",
-                      "find_opponent_team.sql", "filter_opponent_team.sql", "recommend_opponent_team.sql",
-                      "filter_all_team.sql", "recommend_all_team.sql",
-                      "find_opponent_lane.sql", "filter_opponent_lane.sql", "recommend_opponent_lane.sql"
-                      ]
+    query_key_list = [
+        "find_our_team.sql",
+        "filter_our_team.sql",
+        "recommend_our_team.sql",
+        "find_opponent_team.sql",
+        "filter_opponent_team.sql",
+        "recommend_opponent_team.sql",
+        "filter_all_team.sql",
+        "recommend_all_team.sql",
+        "find_opponent_lane.sql",
+        "filter_opponent_lane.sql",
+        "recommend_opponent_lane.sql",
+    ]
 
     query_list = fetch_sql_from_s3(query_bucket_name, query_key_list)
 
@@ -133,23 +138,18 @@ if __name__ == "__main__":
 
     sm_session = boto3.session.Session()
     sm_client = sm_session.client(
-        service_name='secretsmanager',
-        region_name=region_name
+        service_name="secretsmanager", region_name=region_name
     )
-    get_secret_value_response = sm_client.get_secret_value(
-        SecretId=secret_name
-    )
-    secret_string = get_secret_value_response['SecretString']
+    get_secret_value_response = sm_client.get_secret_value(SecretId=secret_name)
+    secret_string = get_secret_value_response["SecretString"]
     secret_data = json.loads(secret_string)
 
-    db_url = secret_data['jdbc_url']
-    db_user = secret_data['user']
-    db_password = secret_data['password']
+    db_url = secret_data["jdbc_url"]
+    db_user = secret_data["user"]
+    db_password = secret_data["password"]
 
     # rds 연결
-    jdbc_url = (
-        db_url
-    )
+    jdbc_url = db_url
 
     properties = {
         "user": db_user,
