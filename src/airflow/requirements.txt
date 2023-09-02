@@ -2,3 +2,4 @@ apache-airflow-providers-apache-kafka
 kafka-python
 python-dotenv
 redis
+joblib
