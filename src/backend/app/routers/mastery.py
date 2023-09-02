@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Depends
 from ..models.mastery import Mastery
-from ..db_session import SessionLocal
+from fastapi_cache.decorator import cache
+from ..utils.helpers import get_db
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
 
 @router.get("/champion-info")
-async def get_champion_info(champion_name: str):
-    db = SessionLocal()
+@cache(expire=86400)
+async def get_champion_info(champion_name: str, db: Session = Depends(get_db)):
     champion = db.query(Mastery).filter(Mastery.champion_name == champion_name).first()
-    db.close()
 
     if champion:
         champion_data = [
