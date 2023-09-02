@@ -16,3 +16,4 @@ mysql-connector-python==8.1.0
 kinesis==0.0.1a13
 Python-dotenv==1.0.0
 boto3==1.28.36
+requests
