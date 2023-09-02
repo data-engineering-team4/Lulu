@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import summoners, banpick, mastery
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
+from fastapi_cache.decorator import cache
 
 app = FastAPI()
 
@@ -23,6 +26,17 @@ app.include_router(banpick.router)
 app.include_router(mastery.router)
 
 
+def cache_config():
+    FastAPICache.init(InMemoryBackend(), prefix="inmemory:")
+
+
+@app.on_event("startup")
+async def on_startup():
+    cache_config()
+
+
 @app.get("/")
 async def root():
     return {"message": "Hello Bigger Applications!"}
+
+
