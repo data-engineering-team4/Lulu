@@ -3,7 +3,7 @@ from ..db_session import Base
 
 
 class AllTeam(Base):
-    __tablename__ = 'all_team'
+    __tablename__ = "all_team"
 
     id = Column(Text, primary_key=True)
     champion_name = Column(Text)
@@ -23,7 +23,7 @@ class AllTeam(Base):
 
 
 class OpponentLane(Base):
-    __tablename__ = 'opponent_lane'
+    __tablename__ = "opponent_lane"
 
     id = Column(Text, primary_key=True)
     champion_name = Column(Text)
@@ -34,7 +34,7 @@ class OpponentLane(Base):
 
 
 class OpponentTeam(Base):
-    __tablename__ = 'opponent_team'
+    __tablename__ = "opponent_team"
 
     id = Column(Text, primary_key=True)
     champion_name = Column(Text)
@@ -49,7 +49,7 @@ class OpponentTeam(Base):
 
 
 class OurTeam(Base):
-    __tablename__ = 'our_team'
+    __tablename__ = "our_team"
 
     id = Column(Text, primary_key=True)
     champion_name = Column(Text)
