@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import summoners, banpick, mastery
+from .routers import summoners, banpick, mastery, tier
 
 app = FastAPI()
 
@@ -21,6 +21,7 @@ app.add_middleware(
 app.include_router(summoners.router)
 app.include_router(banpick.router)
 app.include_router(mastery.router)
+app.include_router(tier.router)
 
 
 @app.get("/")

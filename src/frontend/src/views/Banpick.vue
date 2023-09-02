@@ -212,7 +212,7 @@
                 </div>
               </div>
               <div v-else class="recommend-section-table">
-
+                {{ tierData[1] }}
               </div>
             </div>
           </div>
@@ -281,9 +281,11 @@ export default {
       championBot: {},
       championSup: {},
       selectMastery: [],
-      selectedTier: 'all',
+      selectedTier: 'challenger',
+      selectedPosition: 'TOP',
       isDropdownOpen: false,
-      showSection: false
+      showSection: false,
+      tierData: {}
     };
   },
   watch: {
@@ -434,12 +436,28 @@ export default {
         this.showSection = true
       }
     },
+    getTier() {
+      axios
+      .post(`/banpick/tier/${this.selectedTier}/${this.selectedPosition}`, { timeout: 5000 })
+        .then(response => {
+          console.log('Data sent successfully', response);
+          this.tierData = response.data
+        })
+        .catch(error => {
+          console.log('Error sending data', error);
+        });
+    },
     search() {
       this.summonerInfo.summonerName = this.summonerName;
       axios
         .post('/banpick/search', this.summonerInfo, { timeout: 5000 })
         .then(response => {
           console.log('Data sent successfully', response);
+          this.summonerName = response.data.summonerName;
+          this.championMastery = response.data.championMastery;
+          this.summonerInfoLoaded = true;
+          this.masteryId = this.championMastery.map(mastery => mastery.championId);
+          this.masteryName = this.masteryId.map(championId => this.championMapping[championId]);
           this.summonerName = response.data.summonerName;
           this.championMastery = response.data.championMastery;
           this.summonerInfoLoaded = true;
@@ -512,6 +530,8 @@ export default {
     }
   },
   mounted() {
+    this.getTier();
+
     fetch('/champion_dictionary.json')
       .then(response => response.json())
       .then(data => {
