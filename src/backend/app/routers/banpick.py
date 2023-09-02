@@ -78,10 +78,6 @@ def get_db():
         db.close()
 
 
-kmeans_model = load("kmeans_model.joblib")
-progamer_df = pd.read_csv("progamer_list_with_clusters.csv")
-
-
 @router.post("/banpick/produce")
 async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
     my_lane = lane_mapping.get(team_info.myLane + 1)
