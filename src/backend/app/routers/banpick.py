@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from ..models.team_info import TeamInfo
 from ..models.team import AllTeam, OurTeam, OpponentTeam, OpponentLane
 from ..models.summoner_info import SummonerInfo
@@ -12,6 +12,7 @@ import boto3
 from joblib import load
 import pandas as pd
 from io import BytesIO
+import time
 
 router = APIRouter()
 load_dotenv()
@@ -43,7 +44,7 @@ kmeans_model = load(model_stream)
 response = s3_client.get_object(
     Bucket="de-4-2", Key="data/progamer/progamer_list_with_clusters.csv"
 )
-progamer_csv_stream = BytesIO(response["Body"].read().decode("utf-8"))
+progamer_csv_stream = BytesIO(response["Body"].read())
 progamer_df = pd.read_csv(progamer_csv_stream)
 
 
@@ -84,6 +85,7 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
     our_team = {}
     opponent_team = {}
     table_check = []
+    # our_tema_result = []
 
     for lane, champ_id in team_info.ourTeam.items():
         new_lane = lane_mapping.get(int(lane))
@@ -182,7 +184,7 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
             print("Kinesis Error", e)
             return {"error": str(e)}
 
-    return {"myLane": my_lane, "ourTeam": our_team, "opponentTeam": opponent_team}
+    return {"table_check": table_check}
 
 
 @router.post("/banpick/search")
@@ -202,3 +204,91 @@ async def get_summoner_name(summoner_info: SummonerInfo, db: Session = Depends(g
         "championMastery": champion_mastery,
         "recommendedProgamer": recommended_progamer.to_dict(orient="records"),
     }
+
+#
+# @router.post("/banpick/consume/1")
+# async def wait_our_team():
+#     shard_iterator = client.get_shard_iterator(
+#         StreamName="sparktobackend",
+#         ShardId="shardId-000000000001",
+#         ShardIteratorType="LATEST",
+#     )["ShardIterator"]
+#
+#     while True:
+#         response = client.get_records(ShardIterator=shard_iterator, Limit=100)
+#
+#         for record in response["Records"]:
+#             data = record["Data"].decode("utf-8")
+#             if data:
+#                 print(data)
+#                 return {
+#                     "our_team": data
+#                 }
+#         shard_iterator = response["NextShardIterator"]
+#         time.sleep(1)
+#
+#
+# @router.post("/banpick/consume/2")
+# async def wait_our_team():
+#     shard_iterator = client.get_shard_iterator(
+#         StreamName="sparktobackend",
+#         ShardId="shardId-000000000001",
+#         ShardIteratorType="LATEST",
+#     )["ShardIterator"]
+#
+#     while True:
+#         response = client.get_records(ShardIterator=shard_iterator, Limit=100)
+#
+#         for record in response["Records"]:
+#             data = record["Data"].decode("utf-8")
+#             if data:
+#                 print(data)
+#                 return {
+#                     "our_team": data
+#                 }
+#         shard_iterator = response["NextShardIterator"]
+#         time.sleep(1)
+#
+#
+# @router.post("/banpick/consume/3")
+# async def wait_our_team():
+#     shard_iterator = client.get_shard_iterator(
+#         StreamName="sparktobackend",
+#         ShardId="shardId-000000000001",
+#         ShardIteratorType="LATEST",
+#     )["ShardIterator"]
+#
+#     while True:
+#         response = client.get_records(ShardIterator=shard_iterator, Limit=100)
+#
+#         for record in response["Records"]:
+#             data = record["Data"].decode("utf-8")
+#             if data:
+#                 print(data)
+#                 return {
+#                     "our_team": data
+#                 }
+#         shard_iterator = response["NextShardIterator"]
+#         time.sleep(1)
+#
+#
+# @router.post("/banpick/consume/4")
+# async def wait_our_team():
+#     shard_iterator = client.get_shard_iterator(
+#         StreamName="sparktobackend",
+#         ShardId="shardId-000000000001",
+#         ShardIteratorType="LATEST",
+#     )["ShardIterator"]
+#
+#     while True:
+#         response = client.get_records(ShardIterator=shard_iterator, Limit=100)
+#
+#         for record in response["Records"]:
+#             data = record["Data"].decode("utf-8")
+#             if data:
+#                 print(data)
+#                 return {
+#                     "our_team": data
+#                 }
+#         shard_iterator = response["NextShardIterator"]
+#         time.sleep(1)
