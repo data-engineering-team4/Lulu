@@ -23,7 +23,7 @@ x-airflow-common:
     # WARNING: Use _PIP_ADDITIONAL_REQUIREMENTS option ONLY for a quick checks
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
 
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- kafka-python apache-airflow-providers-common-sql[pandas] apache-airflow-providers-amazon apache-airflow-providers-apache-kafka scikit-learn pymysql}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- kafka-python apache-airflow-providers-common-sql[pandas] apache-airflow-providers-amazon apache-airflow-providers-apache-kafka scikit-learn pymysql joblib}
 
   volumes:
     - ${AIRFLOW_PROJ_DIR:-../src/airflow}/dags:/opt/airflow/dags
