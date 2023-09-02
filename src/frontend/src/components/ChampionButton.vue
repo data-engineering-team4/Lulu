@@ -9,16 +9,16 @@
         </div>
         <div class="info-label-container">
           <div class="info-label1">
-            <div>티어</div>
-            <div class="info-label2">1티어</div>
+            <div>픽률</div>
+            <div class="info-label2">{{ getPick(getId(champions[index+1])) }}%</div>
           </div>
           <div class="info-label1">
             <div>승률</div>
-            <div class="info-label2">50%</div>
+            <div class="info-label2">{{ getWin(getId(champions[index+1])) }}%</div>
           </div>
           <div class="info-label1">
-            <div>픽률</div>
-            <div class="info-label2">50%</div>
+            <div>벤률</div>
+            <div class="info-label2">{{ getBan(getId(champions[index+1])) }}%</div>
           </div>
         </div>
         <div class="info-label3">
@@ -49,12 +49,17 @@ export default {
       type: Array,
       default: () => []
     },
-    selectedButtonIndex: Object
+    selectedButtonIndex: Object,
+    tierData: {
+      type: Array,
+      default: () => []
+    }
   },
   name: 'ChampionButton',
   data() {
     return {
       champions: {},
+      champions2: {},
       specialImage: 'https://ddragon.leagueoflegends.com/cdn/13.16.1/img/champion/Rumble.png',
       selectedImage: [],
       images: [],
@@ -66,6 +71,9 @@ export default {
       champions_en: {},
       requestedMastery: false,
       masteryData: '',
+      pick: 0,
+      champions_map: {},
+      id: '',
     };
   },
   watch: {
@@ -74,6 +82,7 @@ export default {
 
       if (newIndex === 0) {
         apiEndpoint = '/top.json';
+        // this.disabledChampions = [];
       }
       if (newIndex === 1) {
         apiEndpoint = '/jug.json';
@@ -100,6 +109,7 @@ export default {
   methods: {
     changeImage(index) {
       if (this.disabledChampions.includes(index)) return;
+      this.getName();
       this.$emit('select-champion', this.images[index], index);
     },
     updateBoxPosition(event) {
@@ -136,6 +146,41 @@ export default {
     },
     selectLaneButton() {
       this.$emit('lane', 'selectedLaneInfo'); // 선택한 라인 정보를 이벤트와 함께 전달
+    },
+    getId(champ) {
+      const foundId = Object.keys(this.champions_map).find(key => this.champions_map[key] === champ);
+
+      if (foundId) {
+        this.id = foundId;
+        return this.id;
+      } else {
+        this.id = '0';
+        return this.id;
+      }
+    },
+    getPick(id) {
+      for (let i = 0; i < this.tierData.length; i++) {
+        if (this.tierData[i].champion_id == id) {
+          const pickRate = this.tierData[i].pick_rate.toFixed(2);
+          return parseFloat(pickRate);
+        }
+      }
+    },
+    getWin(id) {
+      for (let i = 0; i < this.tierData.length; i++) {
+        if (this.tierData[i].champion_id == id) {
+          const winRate = this.tierData[i].win_rate.toFixed(2);
+          return parseFloat(winRate);
+        }
+      }
+    },
+    getBan(id) {
+      for (let i = 0; i < this.tierData.length; i++) {
+        if (this.tierData[i].champion_id == id) {
+          const banRate = this.tierData[i].ban_rate.toFixed(2);
+          return parseFloat(banRate);
+        }
+      }
     }
   },
   mounted() {
@@ -160,6 +205,13 @@ export default {
       .then(data => {
         this.champions_en = data;
       });
+
+    fetch('/champion_dictionary.json')
+      .then(response => response.json())
+      .then(data => {
+        this.champions_map = data;
+      });
+
   }
 }
 </script>
