@@ -1,9 +1,11 @@
 # Airflow 관련 모듈 임포트
+import redis
 from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.empty import EmptyOperator
 from airflow.utils.task_group import TaskGroup
 from datetime import datetime, timedelta
+from utils.common_util import verify_data_in_redis
 
 # 유틸리티 및 상수 모듈 임포트
 from utils.slack_alert import SlackAlert
@@ -76,75 +78,6 @@ def _wait_for_request(key):
             break
 
 
-def _process_summoner_data(
-    tier, division, page, api_key, redis_conn, processed_ids, key_num, logging
-):
-    try:
-        json_data = get_summoner_info_by_tier_division_page(
-            tier, division, page, api_key
-        )
-        _wait_for_request(key_num)  # API 요청 제한 확인
-
-        for data in json_data:
-            summoner_id = data["summonerId"]
-            if summoner_id not in processed_ids:
-                summoner_data = {
-                    "tier": tier,
-                    "division": division,
-                    "summoner_id": summoner_id,
-                    "summoner_name": data["summonerName"],
-                }
-                redis_conn.sadd(f"summoner_data_{key_num}", json.dumps(summoner_data))
-                redis_conn.sadd("processed_summoners_ids", summoner_id)
-    except KeyError:
-        logging.error("API 키 제한")
-        time.sleep(1.2)
-
-
-def _process_high_elo_data(
-    high_elo, api_key, redis_conn, processed_ids, key_num, logging
-):
-    try:
-        json_data = get_high_elo_summoner_info(high_elo.lower(), api_key)
-        _wait_for_request(key_num)
-        json_data_length = len(json_data["entries"])
-
-        # 월요일:0, 화요일: 1, ... 일요일: 6
-        current_day_of_week = datetime.today().weekday()
-        today_start_index = (current_day_of_week * json_data_length) // 7
-
-        if current_day_of_week != 6:
-            today_end_index = ((current_day_of_week + 1) * json_data_length) // 7
-        else:
-            today_end_index = json_data_length
-
-        segment_length = (today_end_index - today_start_index) // 3
-
-        key_num_start_index = today_start_index + segment_length * key_num
-        key_num_end_index = (
-            (key_num_start_index + segment_length) if key_num != 2 else today_end_index
-        )
-
-        selected_entries = json_data["entries"][key_num_start_index:key_num_end_index]
-
-        for data in selected_entries:
-            summoner_id = data["summonerId"]
-            if summoner_id not in processed_ids:
-                high_elo_summoner_data = {
-                    "tier": high_elo,
-                    "division": "0",
-                    "summoner_id": summoner_id,
-                    "summoner_name": data["summonerName"],
-                }
-                redis_conn.sadd(
-                    f"summoner_data_{key_num}", json.dumps(high_elo_summoner_data)
-                )
-                redis_conn.sadd("processed_summoners_ids", summoner_id)
-    except KeyError:
-        logging.error("API 키 제한")
-        time.sleep(1.2)
-
-
 def _categorize_tier_data(summoner_ids):
     from collections import defaultdict
 
@@ -155,24 +88,6 @@ def _categorize_tier_data(summoner_ids):
             tier += summoner.get("division")
         tier_data[tier].append(summoner)
     return tier_data
-
-
-def _process_matches(
-    matches, processed_match_ids, existing_matches, redis_conn, match_list
-):
-    unique_matches = [match for match in matches if match not in processed_match_ids]
-
-    if unique_matches:
-        if len(match_list) + len(matches) > TIER_MATCH_COUNT:
-            needed_matches = TIER_MATCH_COUNT - len(match_list)
-            match_list.extend(matches[:needed_matches])
-            match_ids_to_add = [match for match in unique_matches[:needed_matches]]
-            processed_match_ids.update(match_ids_to_add)
-            redis_conn.sadd(existing_matches, *match_ids_to_add)
-        else:
-            match_list.extend(matches)
-            processed_match_ids.update(unique_matches)
-            redis_conn.sadd(existing_matches, *unique_matches)
 
 
 def _save_to_s3(rows, unique_parquet_name, schema_fields, column_names, s3_folder):
@@ -210,9 +125,12 @@ with DAG(
         from utils.common_util import setup_task
 
         api_key, redis_conn, logging = setup_task(key_num)
+
+        existing_user = "processed_summoners_ids"
         processed_summoner_ids = set(
-            member.decode() for member in redis_conn.smembers("processed_summoners_ids")
+            member.decode() for member in redis_conn.smembers(existing_user)
         )
+
         logging.info(f"🚀processed_summoner_ids : {len(processed_summoner_ids)}")
 
         days_since_start = (
@@ -226,22 +144,83 @@ with DAG(
         # 각 티어와 디비전 별로 소환사 정보 수집
         for tier in TIERS:
             for division in DIVISIONS:
-                _process_summoner_data(
-                    tier,
-                    division,
-                    page,
-                    api_key,
-                    redis_conn,
-                    processed_summoner_ids,
-                    key_num,
-                    logging,
-                )
+                try:
+                    json_data = get_summoner_info_by_tier_division_page(
+                        tier, division, page, api_key
+                    )
+                    _wait_for_request(key_num)  # API 요청 제한 확인
+
+                    for data in json_data:
+                        summoner_id = data["summonerId"]
+
+                        if summoner_id not in processed_summoner_ids:
+                            summoner_data = json.dumps(
+                                {
+                                    "tier": tier,
+                                    "division": division,
+                                    "summoner_id": summoner_id,
+                                    "summoner_name": data["summonerName"],
+                                }
+                            )
+
+                            redis_conn.sadd(f"summoner_data_{key_num}", summoner_data)
+                            redis_conn.sadd(existing_user, summoner_id)
+
+                except KeyError:
+                    logging.error("API 키 제한")
+                    time.sleep(1.2)
+                    continue
 
         # 고위 레벨 소환사 데이터 처리
         for high_elo in HIGH_ELO_LIST:
-            _process_high_elo_data(
-                high_elo, api_key, redis_conn, processed_summoner_ids, key_num, logging
-            )
+            try:
+                json_data = get_high_elo_summoner_info(high_elo.lower(), api_key)
+                _wait_for_request(key_num)
+                json_data_length = len(json_data["entries"])
+
+                # 월요일:0, 화요일: 1, ... 일요일: 6
+                current_day_of_week = datetime.today().weekday()
+                today_start_index = (current_day_of_week * json_data_length) // 7
+
+                if current_day_of_week != 6:
+                    today_end_index = (
+                        (current_day_of_week + 1) * json_data_length
+                    ) // 7
+                else:
+                    today_end_index = json_data_length
+
+                segment_length = (today_end_index - today_start_index) // 3
+
+                key_num_start_index = today_start_index + segment_length * key_num
+                key_num_end_index = (
+                    (key_num_start_index + segment_length)
+                    if key_num != 2
+                    else today_end_index
+                )
+
+                selected_entries = json_data["entries"][
+                    key_num_start_index:key_num_end_index
+                ]
+
+                for data in selected_entries:
+                    summoner_id = data["summonerId"]
+                    if summoner_id not in processed_summoner_ids:
+                        high_elo_summoner_data = json.dumps(
+                            {
+                                "tier": high_elo,
+                                "division": "0",
+                                "summoner_id": summoner_id,
+                                "summoner_name": data["summonerName"],
+                            }
+                        )
+                        redis_conn.sadd(
+                            f"summoner_data_{key_num}", high_elo_summoner_data
+                        )
+                        redis_conn.sadd("processed_summoners_ids", summoner_id)
+            except KeyError:
+                logging.error("API 키 제한")
+                time.sleep(1.2)
+                continue
 
         logging.info(f"😎get_summoners_by_tier finished")
 
@@ -261,7 +240,16 @@ with DAG(
         summoner_ids = [
             json.loads(member.decode()) for member in redis_conn.smembers(summoner_part)
         ]
+
+        logging.info(f"🔍 {summoner_ids}")
+
+        logging.info(
+            f" processed_match_ids : {len(processed_match_ids)} / summoner_data_{key_num} : {len(summoner_part)}"
+        )
+
         tier_data = _categorize_tier_data(summoner_ids)
+
+        logging.info(f"✅ {tier_data.keys()}")
 
         logging.info(f"🚀 categorize_tier_data : {len(tier_data)}")
 
@@ -277,9 +265,16 @@ with DAG(
 
             logging.info(f"🚀Processing tier: {tier}")
             for summoner in summoners:
-                # tier별로 조건을 검사
                 if len(match_list_by_tier[tier]) >= TIER_MATCH_COUNT:
                     logging.info(f"🚀{tier}는 이미 충분한 데이터를 수집했습니다. 다음 tier로 넘어갑니다.")
+                    break
+
+                if all(
+                    len(match_list) >= TIER_MATCH_COUNT
+                    for match_list in match_list_by_tier.values()
+                ):
+                    is_finished = True
+                    logging.info(f"🚀모든 데이터를 수집했습니다...")
                     break
 
                 try:
@@ -296,20 +291,33 @@ with DAG(
                     matches = get_match_history(
                         puuid, SEVEN_DAYS_AGO_TIMESTAMP, 1, MATCH_THRESHOLD, api_key
                     )
-                    _process_matches(
-                        matches,
-                        processed_match_ids,
-                        existing_match,
-                        redis_conn,
-                        match_list_by_tier[tier],
-                    )
 
-                    if all(
-                        len(match_list) >= TIER_MATCH_COUNT
-                        for match_list in match_list_by_tier.values()
-                    ):
-                        is_finished = True
-                        break
+                    unique_matches = [
+                        match for match in matches if match not in processed_match_ids
+                    ]
+
+                    if unique_matches:
+                        if (
+                            len(match_list_by_tier[tier]) + len(matches)
+                            > TIER_MATCH_COUNT
+                        ):
+                            needed_matches = TIER_MATCH_COUNT - len(
+                                match_list_by_tier[tier]
+                            )
+                            match_list_by_tier[tier].extend(matches[:needed_matches])
+                            match_ids_to_add = [
+                                match for match in unique_matches[:needed_matches]
+                            ]
+                            processed_match_ids.update(match_ids_to_add)
+                            redis_conn.sadd(existing_match, *match_ids_to_add)
+                        else:
+                            match_list_by_tier[tier].extend(matches)
+                            match_ids_to_add = [match for match in unique_matches]
+                            processed_match_ids.update(
+                                [match for match in unique_matches]
+                            )
+                            redis_conn.sadd(existing_match, *match_ids_to_add)
+
                 except KeyError as e:
                     logging.warning(
                         f"🚨KeyError가 발생했습니다 ({e}): {summoner['summoner_name']}을(를) 처리하는 중"
@@ -318,13 +326,21 @@ with DAG(
                 except Exception as e:
                     logging.info(f"🚨예외가 발생했습니다: {e}")
 
+        redis_key = f"match_data_{key_num}"
+        for tier in match_list_by_tier.keys():
+            match_list = match_list_by_tier[tier]
+            for match in match_list:
+                match_data = json.dumps({"tier": tier, "matchId": match})
+                redis_conn.sadd(redis_key, match_data)
+        logging.info("😎match_data saved!")
+
         if is_finished:
             logging.info("😎get_match_list finished")
 
     @task()
     def extract_match_data(key_num):
         from utils.riot_util import get_match_details
-        from utils.common_util import setup_task, save_to_redis, load_from_redis
+        from utils.common_util import setup_task, load_from_redis
         import pyarrow as pa
         import json
 
@@ -378,7 +394,7 @@ with DAG(
 
                 row = (tier, match_id, json.dumps(match_details))
                 match_detail_rows.append(row)
-                all_data.append(row)
+                all_data.append(match_id)
 
                 # 1000개의 row가 쌓이면 S3에 업로드
                 if len(match_detail_rows) >= S3_UPLOAD_THRESHOLD:
@@ -419,7 +435,7 @@ with DAG(
                     RAW_MATCH_BUCKET,
                 )
 
-            save_to_redis(redis_conn, all_data_key, all_data)
+            redis_conn.set(all_data_key, all_data)
 
         except Exception as e:
             logging.error(f"🚨An unexpected error occurred: {e}")
@@ -510,7 +526,7 @@ with DAG(
         from utils.common_util import setup_task
 
         api_key, redis_conn, logging = setup_task(1)
-        for key in range(1, 4):
+        for key in range(1, 5):
             summoner_data_key = f"summoner_data_{key}"
             match_data_key = f"match_data_{key}"
 
@@ -565,3 +581,5 @@ with DAG(
         >> delete_redis_key_task
         >> end
     )
+
+    # start >> get_summoners_by_tier(4) >> get_match_list(4) >> extract_match_data(4) >> end
