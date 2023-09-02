@@ -12,6 +12,7 @@ with DAG(
     start_date=datetime(2023, 8, 29),
     catchup=False,
 ) as dag:
+
     @task()
     def get_progamer_mastery(key_num):
         from utils.common_util import setup_task
@@ -46,7 +47,9 @@ with DAG(
             folder_name = f"data/mastery/{date}/"
             response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=folder_name)
             csv_files = [
-                obj["Key"] for obj in response["Contents"] if obj["Key"].endswith(".csv")
+                obj["Key"]
+                for obj in response["Contents"]
+                if obj["Key"].endswith(".csv")
             ]
 
             if csv_files:
@@ -59,7 +62,7 @@ with DAG(
                         cont = resp["Body"].read()
 
                         csv_data = BytesIO(cont)
-                        dataframe = pd.read_csv(csv_data, encoding='utf-8')
+                        dataframe = pd.read_csv(csv_data, encoding="utf-8")
 
                         mastery_dfs.append(dataframe)
 
@@ -82,20 +85,20 @@ with DAG(
             encoding="utf-8",
             usecols=lambda column: column != "URL",
         )
-        progamer_summoner_names = pro_name_df['nickname'].tolist()
+        progamer_summoner_names = pro_name_df["nickname"].tolist()
         pro_puuids = {}
         pro_df = pd.DataFrame(columns=mastery_df.columns)
         for index, name in enumerate(progamer_summoner_names):
             try:
                 mastery_data = get_champion_mastery_by_name(name, api_key)
-                puuid = mastery_data[0]['puuid']
+                puuid = mastery_data[0]["puuid"]
                 pro_puuids[name] = puuid
 
                 pro_df.loc[puuid] = None
-                pro_df.loc[puuid, 'id'] = puuid
+                pro_df.loc[puuid, "id"] = puuid
                 for summoner_data in mastery_data:
-                    champion_id = str(summoner_data['championId'])
-                    champion_points = summoner_data['championPoints']
+                    champion_id = str(summoner_data["championId"])
+                    champion_points = summoner_data["championPoints"]
                     pro_df.at[puuid, champion_id] = champion_points
 
             except Exception as e:
@@ -103,37 +106,44 @@ with DAG(
                 continue
 
         mastery_data = pd.concat([mastery_df, pro_df], ignore_index=True)
-        mastery_data_clustering = mastery_data.drop(['Unnamed: 0', 'id'], axis=1)
+        mastery_data_clustering = mastery_data.drop(["Unnamed: 0", "id"], axis=1)
         if mastery_data_clustering.isnull().values.any():
             mastery_data_clustering.fillna(0, inplace=True)
         n_clusters = 15
         kmeans = KMeans(n_clusters=n_clusters, random_state=0)
         kmeans.fit(mastery_data_clustering)
-        mastery_data['cluster'] = kmeans.labels_
+        mastery_data["cluster"] = kmeans.labels_
 
         result = {}
         for name in progamer_summoner_names:
             try:
                 puuid = pro_puuids.get(name)
                 print(puuid)
-                user_data = mastery_data[mastery_data['id'] == puuid]
-                user_cluster = user_data['cluster'].iloc[0]
+                user_data = mastery_data[mastery_data["id"] == puuid]
+                user_cluster = user_data["cluster"].iloc[0]
                 result[name] = user_cluster
             except Exception as e:
                 logging.error("!!!!!!!!!!!!")
                 print(e)
                 continue
         print(pro_puuids)
-        pro_name_df['cluster'] = pro_name_df['nickname'].map(result)
+        pro_name_df["cluster"] = pro_name_df["nickname"].map(result)
         csv_buffer = BytesIO()
         pro_name_df.to_csv(csv_buffer, index=False, encoding="utf-8")
-        s3_client.put_object(Bucket=bucket_name, Key="data/progamer/progamer_list_with_clusters.csv",
-                             Body=csv_buffer.getvalue())
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key="data/progamer/progamer_list_with_clusters.csv",
+            Body=csv_buffer.getvalue(),
+        )
 
         buffer = BytesIO()
         dump(kmeans, buffer)
         buffer.seek(0)
-        s3_client.put_object(Bucket=bucket_name, Key="data/progamer/kmeans_model.joblib", Body=buffer.getvalue())
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key="data/progamer/kmeans_model.joblib",
+            Body=buffer.getvalue(),
+        )
 
     start = EmptyOperator(task_id="start")
 

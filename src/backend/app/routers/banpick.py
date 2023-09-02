@@ -9,6 +9,9 @@ import os
 from dotenv import load_dotenv
 import json
 import boto3
+from joblib import load
+import pandas as pd
+from io import BytesIO
 
 router = APIRouter()
 load_dotenv()
@@ -25,6 +28,24 @@ client = boto3.client(
     aws_secret_access_key=aws_secret_access_key,
     region_name="ap-northeast-3",
 )
+s3_client = boto3.client(
+    "s3",
+    aws_access_key_id=aws_access_key_id,
+    aws_secret_access_key=aws_secret_access_key,
+)
+
+response = s3_client.get_object(
+    Bucket="de-4-2", Key="data/progamer/kmeans_model.joblib"
+)
+model_stream = BytesIO(response["Body"].read())
+kmeans_model = load(model_stream)
+
+response = s3_client.get_object(
+    Bucket="de-4-2", Key="data/progamer/progamer_list_with_clusters.csv"
+)
+progamer_csv_stream = BytesIO(response["Body"].read().decode("utf-8"))
+progamer_df = pd.read_csv(progamer_csv_stream)
+
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(dir_path, "champions.json"), "r") as f:
@@ -55,6 +76,10 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+kmeans_model = load("kmeans_model.joblib")
+progamer_df = pd.read_csv("progamer_list_with_clusters.csv")
 
 
 @router.post("/banpick/produce")
@@ -172,8 +197,12 @@ async def get_summoner_name(summoner_info: SummonerInfo, db: Session = Depends(g
     db_summoner = create_summoner(db, db_summoner)
 
     champion_mastery = get_champion_mastery_by_name(summoner_info.summonerName, api_key)
+    champion_mastery_df = pd.DataFrame([champion_mastery])
+    user_cluster = kmeans_model.predict(champion_mastery_df)
+    recommended_progamer = progamer_df[progamer_df["cluster"] == user_cluster[0]]
 
     return {
         "summonerName": db_summoner.summonerName,
         "championMastery": champion_mastery,
+        "recommendedProgamer": recommended_progamer.to_dict(orient="records"),
     }
