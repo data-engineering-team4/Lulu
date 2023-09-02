@@ -82,7 +82,7 @@ def get_id_by_name(summoner_name, api_key):
     summoner_name으로 id 반환.
     """
     summoner_details = get_summoner_details(summoner_name, api_key)
-    print(summoner_details)
+    # print(summoner_details)
     if "id" in summoner_details:
         id = summoner_details["id"]
         return id
