@@ -111,6 +111,7 @@ def recommend(my_lane, our_team, opponent_team):
             team_summary = team_summary.withColumn("my_lane", F.lit(my_lane))
             generate_uuid_udf = F.udf(generate_uuid, StringType())
             team_summary = team_summary.withColumn("id", generate_uuid_udf())
+            team_summary = team_summary.withColumn("opponent_champ", F.lit(opponent_champ))
             team_summary.write.jdbc(jdbc_url, "opponent_lane", mode="append", properties=properties)
 
         process_team_data(opponent_team, query_list[3:6], my_lane, 1)
