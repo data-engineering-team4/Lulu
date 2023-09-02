@@ -19,6 +19,7 @@ with DAG(
         import pandas as pd
         from airflow.models import Variable
         from io import StringIO
+        from io import BytesIO
 
         aws_access_key_id = Variable.get("aws_access_key_id")
         aws_secret_access_key = Variable.get("aws_secret_access_key")
@@ -45,12 +46,13 @@ with DAG(
             temp_df = pd.read_csv(StringIO(body))
             final_df = pd.concat([final_df, temp_df])
 
-        final_csv_buffer = StringIO()
-        final_df.to_csv(final_csv_buffer, index=False)
+        buffer = BytesIO()
+        final_df.to_parquet(buffer, engine="pyarrow", index=False)
+
         s3_client.put_object(
             Bucket=bucket_name,
-            Body=final_csv_buffer.getvalue(),
-            Key=f"data/adhoc_match/merged.csv",
+            Body=buffer.getvalue(),
+            Key=f"data/adhoc_match/merged.parquet",
         )
 
     start = EmptyOperator(task_id="start")
