@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, Float, Integer
 from ..db_session import Base
 
+
 class tb_info(Base):
     __tablename__ = "tb_info"
     tier = Column(String)
