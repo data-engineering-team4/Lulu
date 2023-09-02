@@ -2,6 +2,10 @@ import json
 import boto3
 import time
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+import uuid
+from pyspark.sql.types import StringType
+from pyspark.sql import Row
 
 
 def fetch_from_s3(bucket, key):
@@ -22,6 +26,10 @@ def get_operator(value):
         return ">="
     else:
         return ">"
+
+
+def generate_uuid():
+    return str(uuid.uuid4())
 
 
 def process_team_data(team, query_list, my_lane, flag):
@@ -59,19 +67,47 @@ def process_team_data(team, query_list, my_lane, flag):
         filtered_data.createOrReplaceTempView("opponent_filtered_data")
 
     team_summary = spark.sql(team_summary_query.format(my_lane=my_lane))
-    team_summary.show()
+
+    if team_summary.count() == 0:
+        team_summary = spark.createDataFrame(
+            [Row(champion_name="!!!", win_rate="!!!", pick_rate="!!!")]
+        )
+
+    team_summary = team_summary.withColumn("my_lane", F.lit(my_lane))
+
+    champion_positions = {
+        "top": top_champ,
+        "jungle": jungle_champ,
+        "middle": middle_champ,
+        "bottom": bottom_champ,
+        "utility": utility_champ,
+    }
+
+    for position, champ in champion_positions.items():
+        team_summary = team_summary.withColumn(position, F.lit(champ))
+
+    generate_uuid_udf = F.udf(generate_uuid, StringType())
+    team_summary = team_summary.withColumn("id", generate_uuid_udf())
+
+    if flag == 0:
+        team_summary.write.jdbc(
+            jdbc_url, "our_team", mode="append", properties=properties
+        )
+    else:
+        team_summary.write.jdbc(
+            jdbc_url, "opponent_team", mode="append", properties=properties
+        )
 
 
-def recommend(my_lane, our_team, opponent_team):
+def recommend(my_lane, our_team, opponent_team, table_check):
     data_spark.createOrReplaceTempView("games")
 
-    if our_team:
+    if our_team and "2" in table_check:
         process_team_data(our_team, query_list[:3], my_lane, 0)
-        print("😋", my_lane, our_team, opponent_team)
 
-    if opponent_team:
+    if opponent_team and "3" in table_check:
         opponent_champ = opponent_team.get(my_lane, "???")
-        if opponent_champ != "???":
+        if opponent_champ != "???" and "4" in table_check:
             find_opponent_lane_query = query_list[8]
             filter_opponent_lane_query = query_list[9]
             counter_team_summary_query = query_list[10]
@@ -83,13 +119,23 @@ def recommend(my_lane, our_team, opponent_team):
             filtered_data = spark.sql(filter_opponent_lane_query)
             filtered_data.createOrReplaceTempView("opponent_lane_filtered_data")
             team_summary = spark.sql(counter_team_summary_query.format(my_lane=my_lane))
-            team_summary.show()
-            print("😋😋😋😋", my_lane, our_team, opponent_team)
+            if team_summary.count() == 0:
+                team_summary = spark.createDataFrame(
+                    [Row(champion_name="!!!", win_rate="!!!", pick_rate="!!!")]
+                )
+            team_summary = team_summary.withColumn("my_lane", F.lit(my_lane))
+            generate_uuid_udf = F.udf(generate_uuid, StringType())
+            team_summary = team_summary.withColumn("id", generate_uuid_udf())
+            team_summary = team_summary.withColumn(
+                "opponent_champ", F.lit(opponent_champ)
+            )
+            team_summary.write.jdbc(
+                jdbc_url, "opponent_lane", mode="append", properties=properties
+            )
 
         process_team_data(opponent_team, query_list[3:6], my_lane, 1)
-        print("😋😋", my_lane, our_team, opponent_team)
 
-    if our_team and opponent_team:
+    if our_team and opponent_team and "1" in table_check:
         filter_all_team_query = query_list[6]
         all_team_summary_query = query_list[7]
 
@@ -98,8 +144,30 @@ def recommend(my_lane, our_team, opponent_team):
         all_filtered_data.show()
 
         all_team_summary = spark.sql(all_team_summary_query.format(my_lane=my_lane))
-        all_team_summary.show()
-        print("😋😋😋", my_lane, our_team, opponent_team)
+        if all_team_summary.count() == 0:
+            all_team_summary = spark.createDataFrame(
+                [Row(champion_name="!!!", win_rate="!!!", pick_rate="!!!")]
+            )
+
+        positions = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"]
+
+        for position in positions:
+            champ = our_team.get(position, "???")
+            all_team_summary = all_team_summary.withColumn(
+                f"our_{position.lower()}", F.lit(champ)
+            )
+
+            champ = opponent_team.get(position, "???")
+            all_team_summary = all_team_summary.withColumn(
+                f"opponent_{position.lower()}", F.lit(champ)
+            )
+
+        all_team_summary = all_team_summary.withColumn("my_lane", F.lit(my_lane))
+        generate_uuid_udf = F.udf(generate_uuid, StringType())
+        all_team_summary = all_team_summary.withColumn("id", generate_uuid_udf())
+        all_team_summary.write.jdbc(
+            jdbc_url, "all_team", mode="append", properties=properties
+        )
 
 
 if __name__ == "__main__":
@@ -178,8 +246,9 @@ if __name__ == "__main__":
             my_lane = data_dict["myLane"]
             our_team = data_dict["ourTeam"]
             opponent_team = data_dict["opponentTeam"]
+            table_check = data_dict["table_check"]
 
-            recommend(my_lane, our_team, opponent_team)
+            recommend(my_lane, our_team, opponent_team, table_check)
 
         shard_iterator = response["NextShardIterator"]
 

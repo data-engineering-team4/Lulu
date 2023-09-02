@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from ..models.team_info import TeamInfo
+from ..models.team import AllTeam, OurTeam, OpponentTeam, OpponentLane
 from ..models.summoner_info import SummonerInfo
 from ..models.summoner import Summoner, create_summoner, get_champion_mastery_by_name
 from ..db_session import SessionLocal
@@ -57,10 +58,11 @@ def get_db():
 
 
 @router.post("/banpick/produce")
-async def get_team_info(team_info: TeamInfo):
+async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
     my_lane = lane_mapping.get(team_info.myLane + 1)
     our_team = {}
     opponent_team = {}
+    table_check = []
 
     for lane, champ_id in team_info.ourTeam.items():
         new_lane = lane_mapping.get(int(lane))
@@ -72,14 +74,80 @@ async def get_team_info(team_info: TeamInfo):
         new_champ = champion_mapping.get(champ_id + 1)
         opponent_team[new_lane] = new_champ
 
+    all_team_check = (
+        db.query(AllTeam)
+        .filter_by(
+            my_lane=my_lane,
+            our_top=our_team.get("TOP", "???"),
+            our_jungle=our_team.get("JUNGLE", "???"),
+            our_middle=our_team.get("MIDDLE", "???"),
+            our_bottom=our_team.get("BOTTOM", "???"),
+            our_utility=our_team.get("UTILITY", "???"),
+            opponent_top=opponent_team.get("TOP", "???"),
+            opponent_jungle=opponent_team.get("JUNGLE", "???"),
+            opponent_middle=opponent_team.get("MIDDLE", "???"),
+            opponent_bottom=opponent_team.get("BOTTOM", "???"),
+            opponent_utility=opponent_team.get("UTILITY", "???"),
+        )
+        .all()
+    )
+    if not all_team_check:
+        table_check.append("1")
+
+    if our_team:
+        our_team_check = (
+            db.query(OurTeam)
+            .filter_by(
+                my_lane=my_lane,
+                top=our_team.get("TOP", "???"),
+                jungle=our_team.get("JUNGLE", "???"),
+                middle=our_team.get("MIDDLE", "???"),
+                bottom=our_team.get("BOTTOM", "???"),
+                utility=our_team.get("UTILITY", "???"),
+            )
+            .all()
+        )
+        if not our_team_check:
+            table_check.append("2")
+
+    if opponent_team:
+        opponent_team_check = (
+            db.query(OpponentTeam)
+            .filter_by(
+                my_lane=my_lane,
+                top=opponent_team.get("TOP", "???"),
+                jungle=opponent_team.get("JUNGLE", "???"),
+                middle=opponent_team.get("MIDDLE", "???"),
+                bottom=opponent_team.get("BOTTOM", "???"),
+                utility=opponent_team.get("UTILITY", "???"),
+            )
+            .all()
+        )
+        if not opponent_team_check:
+            table_check.append("3")
+
+    opponent_champ = opponent_team.get(my_lane, "???")
+    if opponent_champ != "???":
+        opponent_lane_check = (
+            db.query(OpponentLane)
+            .filter_by(
+                my_lane=my_lane,
+                opponent_champ=opponent_champ,
+            )
+            .all()
+        )
+        if not opponent_lane_check:
+            table_check.append("4")
+
     print("Received data:", my_lane, our_team, opponent_team)
 
-    if my_lane != "ALL" and (our_team or opponent_team):
-        print("good")
+    if my_lane != "ALL" and (our_team or opponent_team) and table_check:
+        print("!!!!!!!!!!!!!!!!!!!!", table_check)
         transformed_data = {
             "myLane": my_lane,
             "ourTeam": our_team,
             "opponentTeam": opponent_team,
+            "table_check": table_check,
         }
         json_data = json.dumps(transformed_data)
 
