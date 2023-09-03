@@ -116,7 +116,9 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
     if not all_team_check:
         table_check.append("1")
 
-    all_team_check_dicts = [row.__dict__ for row in all_team_check]
+    all_team_check_dicts = [
+        {"championName": row.champion_name} for row in all_team_check
+    ]
     our_team_check_dicts = []
     opponent_team_check_dicts = []
     opponent_lane_check_dicts = []
@@ -135,7 +137,9 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
         )
         if not our_team_check:
             table_check.append("2")
-        our_team_check_dicts = [row.__dict__ for row in our_team_check]
+        our_team_check_dicts = [
+            {"championName": row.champion_name} for row in our_team_check
+        ]
 
     if opponent_team:
         opponent_team_check = (
@@ -152,7 +156,9 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
         )
         if not opponent_team_check:
             table_check.append("3")
-        opponent_team_check_dicts = [row.__dict__ for row in opponent_team_check]
+        opponent_team_check_dicts = [
+            {"championName": row.champion_name} for row in opponent_team_check
+        ]
 
     opponent_champ = opponent_team.get(my_lane, "???")
     if opponent_champ != "???":
@@ -166,12 +172,14 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
         )
         if not opponent_lane_check:
             table_check.append("4")
-        opponent_lane_check_dicts = [row.__dict__ for row in opponent_lane_check]
+        opponent_lane_check_dicts = [
+            {"championName": row.champion_name} for row in opponent_lane_check
+        ]
 
     print("Received data:", my_lane, our_team, opponent_team)
 
     if my_lane != "ALL" and (our_team or opponent_team) and table_check:
-        print("!!!!!!!!!!!!!!!!!!!!", table_check)
+        print("table_check", table_check)
         transformed_data = {
             "myLane": my_lane,
             "ourTeam": our_team,
@@ -189,6 +197,8 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
         except Exception as e:
             print("Kinesis Error", e)
             return {"error": str(e)}
+    else:
+        print("already process all")
 
     return {
         "table_check": table_check,
@@ -218,23 +228,33 @@ async def get_summoner_name(summoner_info: SummonerInfo, db: Session = Depends(g
     }
 
 
-@router.post("/banpick/consume/{team}")
-async def consume_team(team: str):
+@router.post("/banpick/consume")
+async def consume_team(request: Request):
     shard_iterator = client.get_shard_iterator(
         StreamName="sparktobackend",
         ShardId="shardId-000000000001",
         ShardIteratorType="LATEST",
     )["ShardIterator"]
-
+    request_data = await request.json()
+    kinds_data_list = request_data["kinds"]
+    result_list = []
     while True:
-        response = client.get_records(ShardIterator=shard_iterator, Limit=100)
+        response = client.get_records(ShardIterator=shard_iterator, Limit=10)
 
         for record in response["Records"]:
             data_str = record["Data"].decode("utf-8")
             data_json = json.loads(data_str)
             team_summary_received = data_json["team_summary"]
             extra_info_received = data_json["extra_info"]
-            if extra_info_received == team:
-                return {"data": team_summary_received}
+            print(extra_info_received)
+            print(team_summary_received)
+            if extra_info_received in kinds_data_list:
+                kinds_data_list.remove(extra_info_received)
+                result_list.append({extra_info_received:team_summary_received})
+                print(kinds_data_list)
+                print(result_list)
+                if not kinds_data_list:
+                    print("finish")
+                    return {"data": result_list}
         shard_iterator = response["NextShardIterator"]
         time.sleep(1)
