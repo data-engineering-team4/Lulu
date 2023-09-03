@@ -19,3 +19,6 @@ boto3==1.28.36
 requests
 joblib
 pandas
+scikit-learn
+dill
+fastapi_cache2

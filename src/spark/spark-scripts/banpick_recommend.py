@@ -93,10 +93,24 @@ def process_team_data(team, query_list, my_lane, flag):
         team_summary.write.jdbc(
             jdbc_url, "our_team", mode="append", properties=properties
         )
+        consumer_string = "ourteam"
     else:
         team_summary.write.jdbc(
             jdbc_url, "opponent_team", mode="append", properties=properties
         )
+        consumer_string = "opponentteam"
+
+    team_summary_pd = team_summary.toPandas()
+    team_summary_json = team_summary_pd.to_json()
+    final_data = {
+        "team_summary": json.loads(team_summary_json),
+        "extra_info": consumer_string,
+    }
+    final_data_bytes = bytes(json.dumps(final_data), encoding="utf-8")
+
+    response = client.put_record(
+        StreamName="sparktobackend", Data=final_data_bytes, PartitionKey="partition_key"
+    )
 
 
 def recommend(my_lane, our_team, opponent_team, table_check):
@@ -131,6 +145,20 @@ def recommend(my_lane, our_team, opponent_team, table_check):
             )
             team_summary.write.jdbc(
                 jdbc_url, "opponent_lane", mode="append", properties=properties
+            )
+            team_summary_pd = team_summary.toPandas()
+            team_summary_json = team_summary_pd.to_json()
+            final_data = {
+                "team_summary": json.loads(team_summary_json),
+                "extra_info": "opponentlane",
+            }
+
+            final_data_bytes = bytes(json.dumps(final_data), encoding="utf-8")
+
+            response = client.put_record(
+                StreamName="sparktobackend",
+                Data=final_data_bytes,
+                PartitionKey="partition_key",
             )
 
         process_team_data(opponent_team, query_list[3:6], my_lane, 1)
@@ -167,6 +195,20 @@ def recommend(my_lane, our_team, opponent_team, table_check):
         all_team_summary = all_team_summary.withColumn("id", generate_uuid_udf())
         all_team_summary.write.jdbc(
             jdbc_url, "all_team", mode="append", properties=properties
+        )
+        all_team_summary_pd = all_team_summary.toPandas()
+        all_team_summary_json = all_team_summary_pd.to_json()
+        all_final_data = {
+            "team_summary": json.loads(all_team_summary_json),
+            "extra_info": "allteam",
+        }
+
+        all_final_data_bytes = bytes(json.dumps(all_final_data), encoding="utf-8")
+
+        response = client.put_record(
+            StreamName="sparktobackend",
+            Data=all_final_data_bytes,
+            PartitionKey="partition_key",
         )
 
 

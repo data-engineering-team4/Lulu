@@ -675,9 +675,34 @@ export default {
         alert('?!!!')
       }
 
-      axios.post('/banpick/produce', this.teamInfo, { timeout: 5000 })
+      axios.post('/banpick/produce', this.teamInfo)
         .then(response => {
           console.log('Data sent successfully', response);
+
+          const tableCheck = response.table_check;
+          const all_team_check_dicts = response.all_team_check_dicts;
+          const our_team_check_dicts = response.our_team_check_dicts;
+          const opponent_team_check_dicts = response.opponent_team_check_dicts;
+          const opponent_lane_check_dicts = response.opponent_lane_check_dicts;
+
+          const consumerCall1 = tableCheck.includes("1") ? axios.get(`/consumer/allteam`) : Promise.resolve({ data: all_team_check_dicts });
+          const consumerCall2 = tableCheck.includes("2") ? axios.get(`/consumer/ourteam`) : Promise.resolve({ data: our_team_check_dicts });
+          const consumerCall3 = tableCheck.includes("3") ? axios.get(`/consumer/opponentteam`) : Promise.resolve({ data: opponent_team_check_dicts });
+          const consumerCall4 = tableCheck.includes("4") ? axios.get(`/consumer/opponentlane`) : Promise.resolve({ data: opponent_lane_check_dicts });
+
+          consumerCall1.then(response => {
+            console.log('ourteam', response);
+          });
+          consumerCall2.then(response => {
+            console.log('opponentteam', response);
+          });
+          consumerCall3.then(response => {
+            console.log('opponentlane', response);
+          });
+          consumerCall4.then(response => {
+            console.log('allteam', response);
+          });
+
         })
         .catch(error => {
           console.log('Error sending data', error);
