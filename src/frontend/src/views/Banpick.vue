@@ -701,8 +701,13 @@ export default {
       this.selectedTier = tier;
     },
     showRecommendSection() {
-
-      this.showSection = this.showSection !== true;
+      if (this.showSection == true) {
+        this.showSection = false
+        this.is_enable_produce = 0
+      } else {
+        this.showSection = true
+        this.is_enable_produce = 1
+      }
     },
     resetRecommendSection() {
       this.summonerName = '';
