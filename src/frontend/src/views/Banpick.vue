@@ -6,11 +6,11 @@
           <div class="custom-light-font" style="display: inline-block;">BanPick&nbsp;</div>
           <div class="custom-font" style="display: inline-block;">DashBoard&nbsp;&nbsp;&nbsp;</div>
           <div class="sectionButton">
-            <div v-if="showSection == false" class="sectionButton1" @click="showRecommendSection">
-              분석으로 전환
+            <div v-if="showSection == false" class="sectionButton1 custom-light-font2" @click="showRecommendSection">
+              <span>분석으로 전환</span>
             </div>
-            <div v-else class="sectionButton2" @click="showRecommendSection">
-              티어로 전환
+            <div v-else class="sectionButton2 custom-light-font2" @click="showRecommendSection">
+              <span>티어로 전환</span>
             </div>
           </div>
         </div>
@@ -40,7 +40,7 @@
                 <span class="position-label custom-font" :style="getLabelStyle(index)">I'm<br>{{ getPositionLabel(index)}}</span>
             </div>
         </div>
-        <div class="champion-secction">
+        <div class="champion-section">
           <div class="team-header">
             <div class="button-container">
               <div class = "filter">
@@ -60,73 +60,75 @@
                   <img src="@/assets/sup.png" style="max-width: 100%; max-height: 100%;" />
                 </button>
               </div>
-              <div class = "pick">
-                <h5 class="custom-font" style="color: #9752ff; text-align: center;">챔피언을 선택하세요!</h5>
-              </div>
-              <div class = "tier">
-                <div class="custom-dropdown" @click="toggleDropdown">
-                  <div v-if="selectedTier" class="selected-tier tier-item">
-                    <img v-if="selectedTier === 'challenger'" src="@/assets/tier/challenger.webp" class="tier-icon" />
-                    <img v-if="selectedTier === 'grandmaster'" src="@/assets/tier/grandmaster.webp" class="tier-icon" />
-                    <img v-if="selectedTier === 'master'" src="@/assets/tier/master.webp" class="tier-icon" />
-                    <img v-if="selectedTier === 'diamond'" src="@/assets/tier/diamond.webp" class="tier-icon" />
-                    <img v-if="selectedTier === 'emerald'" src="@/assets/tier/emerald.webp" class="tier-icon" />
-                    <img v-if="selectedTier === 'platinum'" src="@/assets/tier/platinum.webp" class="tier-icon" />
-                    <img v-if="selectedTier === 'gold'" src="@/assets/tier/gold.webp" class="tier-icon" />
-                    <img v-if="selectedTier === 'silver'" src="@/assets/tier/silver.webp" class="tier-icon" />
-                    <img v-if="selectedTier === 'bronze'" src="@/assets/tier/bronze.webp" class="tier-icon" />
-                    <img v-if="selectedTier === 'iron'" src="@/assets/tier/iron.webp" class="tier-icon" />
-                    <span v-if="selectedTier === 'all'" class="tier-text0" style="margin-top: 2%; ">{{ capitalizeFirstLetter }}</span>
-                    <span v-else class="tier-text" style="">{{ capitalizeFirstLetter }}</span>
-                  </div>
-                  <div v-else class="placeholder">티어를 선택하세요!</div>
-                  <ul v-show="isDropdownOpen" class="dropdown-options">
-                    <li @click="selectTier('all'), getTier()" class="tier-item">
-                      <span class="tier-text0">All</span>
-                    </li>
-                    <li @click="selectTier('challenger'), getTier()" class="tier-item">
-                      <img src="@/assets/tier/challenger.webp" class="tier-icon" />
-                      <span class="tier-text">Challenger</span>
-                    </li>
-                    <li @click="selectTier('grandmaster'), getTier()" class="tier-item">
-                      <img src="@/assets/tier/grandmaster.webp" class="tier-icon" />
-                      <span class="tier-text">Grandmaster</span>
-                    </li>
-                    <li @click="selectTier('master'), getTier()" class="tier-item">
-                      <img src="@/assets/tier/master.webp" class="tier-icon" />
-                      <span class="tier-text">Master</span>
-                    </li>
-                    <li @click="selectTier('diamond'), getTier()" class="tier-item">
-                      <img src="@/assets/tier/diamond.webp" class="tier-icon" />
-                      <span class="tier-text">Diamond</span>
-                    </li>
-                    <li @click="selectTier('emerald'), getTier()" class="tier-item">
-                      <img src="@/assets/tier/emerald.webp" class="tier-icon" />
-                      <span class="tier-text">Emerald</span>
-                    </li>
-                    <li @click="selectTier('platinum'), getTier()" class="tier-item">
-                      <img src="@/assets/tier/platinum.webp" class="tier-icon" />
-                      <span class="tier-text">Platinum</span>
-                    </li>
-                    <li @click="selectTier('gold'), getTier()" class="tier-item">
-                      <img src="@/assets/tier/gold.webp" class="tier-icon" />
-                      <span class="tier-text">Gold</span>
-                    </li>
-                    <li @click="selectTier('silver'), getTier()" class="tier-item">
-                      <img src="@/assets/tier/silver.webp" class="tier-icon" />
-                      <span class="tier-text">Silver</span>
-                    </li>
-                    <li @click="selectTier('bronze'), getTier()" class="tier-item">
-                      <img src="@/assets/tier/bronze.webp" class="tier-icon" />
-                      <span class="tier-text">Bronze</span>
-                    </li>
-                    <li @click="selectTier('iron'), getTier()" class="tier-item">
-                      <img src="@/assets/tier/iron.webp" class="tier-icon" />
-                      <span class="tier-text">Iron</span>
-                    </li>
-                  </ul>
+              <div>
+                <div class = "pick">
+                  <h3 class="custom-font">챔피언을 선택하세요!</h3>
                 </div>
-              </div>               
+                <div class = "tier">
+                  <div class="custom-dropdown" @click="toggleDropdown">
+                    <div v-if="selectedTier" class="selected-tier tier-item">
+                      <img v-if="selectedTier === 'challenger'" src="@/assets/tier/challenger.webp" class="tier-icon" />
+                      <img v-if="selectedTier === 'grandmaster'" src="@/assets/tier/grandmaster.webp" class="tier-icon" />
+                      <img v-if="selectedTier === 'master'" src="@/assets/tier/master.webp" class="tier-icon" />
+                      <img v-if="selectedTier === 'diamond'" src="@/assets/tier/diamond.webp" class="tier-icon" />
+                      <img v-if="selectedTier === 'emerald'" src="@/assets/tier/emerald.webp" class="tier-icon" />
+                      <img v-if="selectedTier === 'platinum'" src="@/assets/tier/platinum.webp" class="tier-icon" />
+                      <img v-if="selectedTier === 'gold'" src="@/assets/tier/gold.webp" class="tier-icon" />
+                      <img v-if="selectedTier === 'silver'" src="@/assets/tier/silver.webp" class="tier-icon" />
+                      <img v-if="selectedTier === 'bronze'" src="@/assets/tier/bronze.webp" class="tier-icon" />
+                      <img v-if="selectedTier === 'iron'" src="@/assets/tier/iron.webp" class="tier-icon" />
+                      <span v-if="selectedTier === 'all'" class="tier-text0" style="margin-top: 2%; ">{{ capitalizeFirstLetter }}</span>
+                      <span v-else class="tier-text" style="">{{ capitalizeFirstLetter }}</span>
+                    </div>
+                    <div v-else class="placeholder">티어를 선택하세요!</div>
+                    <ul v-show="isDropdownOpen" class="dropdown-options">
+                      <li @click="selectTier('all'), getTier()" class="tier-item">
+                        <span class="tier-text0">All</span>
+                      </li>
+                      <li @click="selectTier('challenger'), getTier()" class="tier-item">
+                        <img src="@/assets/tier/challenger.webp" class="tier-icon" />
+                        <span class="tier-text">Challenger</span>
+                      </li>
+                      <li @click="selectTier('grandmaster'), getTier()" class="tier-item">
+                        <img src="@/assets/tier/grandmaster.webp" class="tier-icon" />
+                        <span class="tier-text">Grandmaster</span>
+                      </li>
+                      <li @click="selectTier('master'), getTier()" class="tier-item">
+                        <img src="@/assets/tier/master.webp" class="tier-icon" />
+                        <span class="tier-text">Master</span>
+                      </li>
+                      <li @click="selectTier('diamond'), getTier()" class="tier-item">
+                        <img src="@/assets/tier/diamond.webp" class="tier-icon" />
+                        <span class="tier-text">Diamond</span>
+                      </li>
+                      <li @click="selectTier('emerald'), getTier()" class="tier-item">
+                        <img src="@/assets/tier/emerald.webp" class="tier-icon" />
+                        <span class="tier-text">Emerald</span>
+                      </li>
+                      <li @click="selectTier('platinum'), getTier()" class="tier-item">
+                        <img src="@/assets/tier/platinum.webp" class="tier-icon" />
+                        <span class="tier-text">Platinum</span>
+                      </li>
+                      <li @click="selectTier('gold'), getTier()" class="tier-item">
+                        <img src="@/assets/tier/gold.webp" class="tier-icon" />
+                        <span class="tier-text">Gold</span>
+                      </li>
+                      <li @click="selectTier('silver'), getTier()" class="tier-item">
+                        <img src="@/assets/tier/silver.webp" class="tier-icon" />
+                        <span class="tier-text">Silver</span>
+                      </li>
+                      <li @click="selectTier('bronze'), getTier()" class="tier-item">
+                        <img src="@/assets/tier/bronze.webp" class="tier-icon" />
+                        <span class="tier-text">Bronze</span>
+                      </li>
+                      <li @click="selectTier('iron'), getTier()" class="tier-item">
+                        <img src="@/assets/tier/iron.webp" class="tier-icon" />
+                        <span class="tier-text">Iron</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div class="champion-buttons-husks">
@@ -150,7 +152,7 @@
               <div class="recommend-section-mastery">
                 <div class="recommend-mastery-first">
                   <div class="recommend-mastery-title custom-font">숙련도</div>
-                  <div class="recommend-mastery-user"><input v-model="summonerName" class="mastery-summoner-name custom-font" type="text" placeholder="소환사명" style="text-align: center"></div>
+                  <div class="recommend-mastery-user"><input v-model="summonerName" @keyup.enter="search" class="mastery-summoner-name custom-font" type="text" placeholder="소환사명"></div>
                   <div><i @click="search" class="fas fa-search search-icon"></i> </div>
                 </div>
                 <div class="recommend-mastery-second">
@@ -211,10 +213,35 @@
                   </div>
                 </div>
               </div>
+              <div v-else-if="summonerInfoLoaded" class="recommend-section-table">
+                <div class = "filter3" style="align-items: center; width: 100%">
+                  <div class="recommend-mastery-title custom-font" style="width:100%;">
+                     숙련도 기반 프로 매칭
+                    <button class="reset-button" @click="resetRecommendSection" style="margin-left: auto;">
+                      <i class="fas fa-undo"></i>
+                    </button>
+                  </div>
+                  <div style="margin-top: 2%; justify-content: center; height: 100%;">
+                    <div class="gamer-card">
+                      <div class="gamer-nickname">
+                        <span v-if="!errorMessage">
+                          {{ recommendedProgamer.team}}의 {{getProgamerPOS(recommendedProgamer.position)}}, {{ recommendedProgamer.name }} 선수
+                        </span>
+                        <span v-else>
+                          {{ errorMessage }}
+                        </span>
+                      </div>
+                      <div class="gamer-img" :style="getBackgroundStyle(recommendedProgamer.team)">
+                        <img :src="getProgamerImage(recommendedProgamer.name)" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div v-else class="recommend-section-table">
                 <div class = "filter2" style="align-items: center; width: 100%;">
                   <div class="recommend-mastery-title custom-font" style="flex: 2; margin-top: 0; font-size: 120%;">추천 챔피언</div>
-                  <div style="flex: 1.3; margin-right: 10%;">
+                  <div style="flex: 1.5; margin-right: 10%;">
                     <button class="button2" :class="{ active: buttons2[0] }" @click="filterButton(0)">
                       <img src="@/assets/bottom.png" style="max-width: 100%; max-height: 100%;" />
                     </button>
@@ -232,10 +259,10 @@
                     </button>
                   </div>
                 </div>
-                <div style="margin-top: 3%; justify-content: center; height: 100%;">
+                <div style="margin-top: 2%; justify-content: center; height: 100%;">
                   <div class="tier-page">
                     <div style="height: 100%;">
-                      <div v-if="buttons2[0] == true" style="height: 100%;">
+                      <div v-if="buttons2[0] == true" style="height: 100%;border-radius: 20px;">
                         <div style="height: 100%;">
                           <div style="display: flex; height: 10%; align-items: center;">
                             <div style="flex: 1; width: 70%;"></div>
@@ -246,7 +273,7 @@
                           </div>
                           <div v-for="(item, index) in topData.slice(0, 5)" :key="index" style="display: flex; height: 17.5%; align-items: center; border: 1px solid #ccc;">
                             <img class="round-image" :src="getImage(getChampionName(item.champion_id))" style="width: 60%; height: 80%; flex: 0.7;" />
-                            <div class="custom-light-font" style="flex: 1;">{{ enKr[item.champion_name] }}</div>
+                            <div v-auto-font-size class="custom-light-font" style="flex: 1;">{{ enKr[item.champion_name] }}</div>
                             <div class="custom-light-font" style="flex: 1;">{{ parseFloat(item.pick_rate).toFixed(2) }}%</div>
                             <div class="custom-light-font" style="flex: 1;">{{ item.win_rate.toFixed(2) }}%</div>
                             <div class="custom-light-font" style="flex: 1;">{{ item.ban_rate.toFixed(2) }}%</div>
@@ -360,6 +387,7 @@ import ChampionButton from '@/components/ChampionButton.vue';
 import { mapState, mapMutations } from 'vuex'
 import axios from 'axios';
 
+
 export default {
   name: 'BanPickPage',
   components: {
@@ -396,6 +424,8 @@ export default {
         summonerName: ''
       },
       championMastery: [],
+      errorMessage: '',
+      recommendedProgamer: {},
       summonerInfoLoaded: false,
       championMapping: {},
       buttons: [false, false, false, false, false],
@@ -426,7 +456,8 @@ export default {
       midData: [],
       botData: [],
       supData: [],
-      enKr: {}
+      enKr: {},
+      gamerHovered: false,
     };
   },
   watch: {
@@ -579,10 +610,38 @@ export default {
       this.selectedTier = tier;
     },
     showRecommendSection() {
-      if (this.showSection == true) {
-        this.showSection = false
+      this.showSection = this.showSection !== true;
+    },
+    resetRecommendSection() {
+      this.summonerName = '';
+      this.summonerInfo = {};
+      this.championMastery = [];
+      this.recommendedProgamer = {};
+      this.summonerInfoLoaded = false;
+    },
+    getBackgroundStyle(teamName) {
+      if (teamName === 'KT Rolster') {
+        return {backgroundColor: '#FF0A07'};
+      } else if (teamName === 'T1') {
+        return {backgroundColor: '#e4002b'};
+      } else if (teamName === 'Gen.G') {
+        return { backgroundColor: '#aa8a00'};
+      } else if (teamName === 'Hanwha Life Esports') {
+        return {backgroundColor: '#ff6b01'};
+      } else if (teamName === 'Liiv SANDBOX') {
+        return {backgroundColor: '#ffc600'};
+      } else if (teamName === 'Dplus KIA') {
+        return {backgroundColor: 'black'};
+      } else if (teamName === 'Nongshim Red Force') {
+        return {backgroundColor: '#de2027'};
+      } else if (teamName === 'BRION') {
+        return {backgroundColor: '#00492b'};
+      } else if (teamName === 'DRX') {
+        return {backgroundColor: '#5a8dff'};
+      } else if (teamName === 'LNG') {
+        return {backgroundColor: '#008ffd'};
       } else {
-        this.showSection = true
+        return { backgroundColor: '#ffffff' };
       }
     },
     getTier() {
@@ -611,13 +670,10 @@ export default {
           this.summonerName = response.data.summonerName;
           this.championMastery = response.data.championMastery;
           this.summonerInfoLoaded = true;
+          this.recommendedProgamer = response.data.recommendedProgamer;
           this.masteryId = this.championMastery.map(mastery => mastery.championId);
           this.masteryName = this.masteryId.map(championId => this.championMapping[championId]);
-          this.summonerName = response.data.summonerName;
-          this.championMastery = response.data.championMastery;
-          this.summonerInfoLoaded = true;
-          this.masteryId = this.championMastery.map(mastery => mastery.championId);
-          this.masteryName = this.masteryId.map(championId => this.championMapping[championId]);
+          this.errorMessage = '';
           for (const masteryName of this.masteryName) {
             if (Object.values(this.championTop).includes(masteryName)) {
                 this.masteryTop.push(masteryName);
@@ -640,12 +696,16 @@ export default {
           }
           for (const masteryName of this.masteryName) {
             if (Object.values(this.championSup).includes(masteryName)) {
-                this.masterySup.push(masteryName);
+              this.masterySup.push(masteryName);
             }
           }
         })
         .catch(error => {
           console.log('Error sending data', error);
+          this.errorMessage = '닉네임을 확인해주세요!';
+          this.summonerInfoLoaded = [];
+          this.championMastery = [];
+          this.recommendedProgamer = {};
         });
     },
     getChampionName(championId) {
@@ -656,6 +716,19 @@ export default {
       if (!imageName) return ''; // Handle if the image name is not provided
 
       return `https://ddragon.leagueoflegends.com/cdn/13.16.1/img/champion/${imageName}.png`;
+    },
+    getProgamerImage(imageName) {
+      if (!imageName) return '';
+      return require('@/assets/progamer/' + imageName + '.png');
+    },
+    getProgamerPOS(position) {
+      if (position === 'MIDDLE') {
+        return "MID";
+      } else if (position === 'UTILITY') {
+        return "SUPPORT"
+      } else {
+        return position;
+      }
     },
     submit() {
 
@@ -747,7 +820,7 @@ export default {
       .then(data => {
         this.enKr = data;
       });
-  }
+  },
 };
 </script>
 <style scoped>
@@ -757,6 +830,10 @@ export default {
 }
 .custom-light-font {
   font-family: 'Doctum Light', sans-serif;
+}
+.custom-light-font2 {
+  font-family: 'Doctum Light', sans-serif;
+  font-size: 15px;
 }
 </style>
 
@@ -796,7 +873,6 @@ export default {
 }
 .sectionButton1{
   width: 150px;
-  font-size: 20px;
   border-radius: 10px;
   background: #eeeeee;
   box-shadow: 3px 3px 1px #b7b7b7,
@@ -813,6 +889,7 @@ export default {
               inset -3px -3px 1px #ffffff;
   padding: 5px;
   text-align: center;
+  color: dimgray;
 }
 .section {
   display: flex;
@@ -823,7 +900,7 @@ export default {
   display: block;
   width: 5vw;
   height: 100%;
-  padding-left: 0%;
+  margin-right: 5px;
   justify-content: center;
 }
 .lane-circle{
@@ -848,14 +925,14 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
   margin-left: 1%;
   margin-right: 2%;
   margin-bottom: 4%;
-border-radius: 25px;
-background: #eeeeee;
-box-shadow:  5px 5px 3px #b7b7b7,
-             -5px -5px 3px #ffffff;
+  border-radius: 25px;
+  background: #eeeeee;
+  box-shadow:  5px 5px 3px #b7b7b7,
+               -5px -5px 3px #ffffff;
   justify-content: center;
-
 }
-.champion-secction{
+
+.champion-section{
   margin: 1% 3% 3% 1%;
   width: 28vw;
 
@@ -877,6 +954,11 @@ box-shadow:  5px 5px 3px #b7b7b7,
   justify-content: center;
 
 }
+
+.opponent-team-section > div {
+  margin-left: 4px;
+}
+
 .submit {
   width: 15vw;
   height: 3vw;
@@ -996,20 +1078,18 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
 }
 
 .recommend-mastery-first{
+  display: flex;
   width: 23vw;
   height: 20%;
   padding-top: 3%;
-  margin-bottom: 3%;
   justify-content: center;
-  display: flex;
-
 }
 .recommend-mastery-title{
   width: 5vw;
   color: #9752ff;
   font-size: large;
   margin-top: 3%;
-  margin-right: 2%;
+  margin-right: 3%;
 }
 .recommend-mastery-user{
   width: 12vw;
@@ -1022,40 +1102,42 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
   width: 80%;
   height: 100%;
   background: transparent;
+  text-align: center;
   border: none;
   font-size: large;
   outline: none;
 }
 .recommend-mastery-second{
+  display: flex;
   width: 23vw;
   height: 60%;
-  margin-left: 4%;
+  margin: 2%;
   justify-content: center;
-  display: flex;
 }
 
-.recommend-mastery-lane{
+.recommend-mastery-second .recommend-mastery-lane{
+  display: flex;
   width: 20%;
   height: 80%;
-  margin-left: 4%;
   justify-content: center;
-  margin-top: 5%;
+  align-items: center;
+  margin: 3%;
 }
 .mastery-lane{
-  width: 100%;
+  max-width: 100%;
   filter: hue-rotate(230deg);
 
 }
 .recommend-mastery-all{
+  display: flex;
   width: 70%;
   height: 90%;
   margin-top: 2%;
-  margin-left: 6%;
   justify-content: center;
-border-radius: 25px;
-background: linear-gradient(145deg, #d6d6d6, #ffffff);
-box-shadow:  5px 5px 6px #9b9b9b,
-             -5px -5px 6px #ffffff;
+  border-radius: 25px;
+  background: linear-gradient(145deg, #d6d6d6, #ffffff);
+  box-shadow:  5px 5px 6px #9b9b9b,
+               -5px -5px 6px #ffffff;
 }
 .recommend-section-table{
   width: 25vw;
@@ -1064,8 +1146,16 @@ box-shadow:  5px 5px 6px #9b9b9b,
   justify-content: center;
   border-radius: 25px;
   background: #eeeeee;
-box-shadow: inset 5px 5px 3px #b7b7b7,
-            inset -5px -5px 3px #ffffff;
+  box-shadow: inset 5px 5px 3px #b7b7b7,
+              inset -5px -5px 3px #ffffff;
+}
+
+.recommend-section-table .recommend-head > span {
+  color: #9752ff;
+}
+
+.recommend-section-table .recommend-head {
+  color: rgb(184, 153, 255);
 }
 
 .recommend-section-first{
@@ -1164,11 +1254,10 @@ box-shadow:  5px 5px 3px #b7b7b7,
 }
 
 .filter,
-.filter2
 .pick,
 .tier {
   display: flex;
-  align-items: center;
+  justify-content: space-between;
 }
 
 .filter {
@@ -1186,14 +1275,26 @@ box-shadow:  5px 5px 3px #b7b7b7,
   padding-left: 5%;
 }
 
+.filter3 {
+  width: 100%;
+  align-items: center;
+  flex: 2;
+  padding-top: 2%;
+  padding-left: 5%;
+  font-size: 120%;
+}
+
 .pick {
-  justify-content: center; /* 가운데 정렬 */
+  position: absolute;
+  right: 55%;
+  color: #9752ff;
 }
 
 .tier {
-  justify-content: flex-end;
-  width: 30%; /* 오른쪽 정렬 */
+  width: 50% !important; /* 오른쪽 정렬 */
+  margin-top: 10px;
   margin-bottom: 13%;
+  text-align: center;
 }
 
 .button1 {
@@ -1232,12 +1333,16 @@ box-shadow:  5px 5px 3px #b7b7b7,
 .custom-dropdown {
   position: relative;
   display: inline-block;
+  align-items: center;
   cursor: pointer;
-  border: 1px solid #ccc;
-  padding: 1%;
-  background: #eeeeee;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  padding: 0.1rem 1rem;
+  background: #e4d7f5;
   width: 100%;
   height: 70%;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .custom-dropdown:hover {
@@ -1278,11 +1383,13 @@ box-shadow:  5px 5px 3px #b7b7b7,
 }
 
 .tier-text0 {
+  font-family: 'Player Title';
   margin-top: 3%;
   margin-bottom: 3%;
   flex-grow: 1;
 }
 .tier-text {
+  font-family: 'Player Title';
   margin-right: 5%;
   flex-grow: 1;
 }
@@ -1294,5 +1401,37 @@ box-shadow:  5px 5px 3px #b7b7b7,
   background: linear-gradient(145deg, #d6d6d6, #ffffff);
   box-shadow:  3px 3px 4px #9b9b9b,
               -3px -3px 4px #ffffff;
+}
+
+.recommend-section-table .reset-button {
+  filter: grayscale(100%);
+  background: #eeeeee;
+  box-shadow:  2px 2px 1px #b7b7b7,
+              -2px -2px 1px #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.gamer-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%;
+  height: 80%;
+  justify-content: center;
+  background: linear-gradient(145deg, #d6d6d6, #ffffff);
+  box-shadow:  3px 3px 4px #9b9b9b,
+              -3px -3px 4px #ffffff;
+}
+
+.gamer-card .gamer-nickname {
+  font-family: 'Player Title';
+}
+
+.gamer-card .gamer-img img {
+  overflow: hidden;
+  max-width: 90%;
+  max-height: 90%;
 }
 </style>
