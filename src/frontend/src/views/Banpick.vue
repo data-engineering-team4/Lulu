@@ -41,9 +41,9 @@
             </div>
         </div>
         <div class="champion-section">
-          <div class="team-header">
+          <div class="team-header" style="height: 30%;">
             <div class="button-container">
-              <div class = "filter">
+              <div class = "filter" style="flex: 1; height: 30%;">
                 <button class="button1" :class="{ active: buttons[0] }" @click="toggleButton(0)">
                   <img src="@/assets/bottom.png" style="max-width: 100%; max-height: 100%;" />
                 </button>
@@ -60,13 +60,13 @@
                   <img src="@/assets/sup.png" style="max-width: 100%; max-height: 100%;" />
                 </button>
               </div>
-              <div>
-                <div class = "pick">
+              <div style="flex: 2; height: 5%; display: flex; margin-right: 0; justify-content: space-between;">
+                <div class = "pick" style="flex: 2; margin-top: 3%; margin-left: 5%;">
                   <h3 class="custom-font">챔피언을 선택하세요!</h3>
                 </div>
-                <div class = "tier">
-                  <div class="custom-dropdown" @click="toggleDropdown">
-                    <div v-if="selectedTier" class="selected-tier tier-item">
+                <div class = "tier" style="flex: 1.3; height: 100%; align-items: center; margin-top: 18%; margin-bottom: 0px;">
+                  <div class="custom-dropdown" @click="toggleDropdown" style="width: 100%; height: 100%; padding-left: 0px; padding-right: 0px; align-items: center;">
+                    <div v-if="selectedTier" class="tier-item" style="align-items: center; height: 100%;">
                       <img v-if="selectedTier === 'challenger'" src="@/assets/tier/challenger.webp" class="tier-icon" />
                       <img v-if="selectedTier === 'grandmaster'" src="@/assets/tier/grandmaster.webp" class="tier-icon" />
                       <img v-if="selectedTier === 'master'" src="@/assets/tier/master.webp" class="tier-icon" />
@@ -77,8 +77,8 @@
                       <img v-if="selectedTier === 'silver'" src="@/assets/tier/silver.webp" class="tier-icon" />
                       <img v-if="selectedTier === 'bronze'" src="@/assets/tier/bronze.webp" class="tier-icon" />
                       <img v-if="selectedTier === 'iron'" src="@/assets/tier/iron.webp" class="tier-icon" />
-                      <span v-if="selectedTier === 'all'" class="tier-text0" style="margin-top: 2%; ">{{ capitalizeFirstLetter }}</span>
-                      <span v-else class="tier-text" style="">{{ capitalizeFirstLetter }}</span>
+                      <span v-if="selectedTier === 'all'" class="tier-text0">{{ capitalizeFirstLetter }}</span>
+                      <span v-else class="tier-text">{{ capitalizeFirstLetter }}</span>
                     </div>
                     <div v-else class="placeholder">티어를 선택하세요!</div>
                     <ul v-show="isDropdownOpen" class="dropdown-options">
@@ -502,7 +502,6 @@ export default {
   },
   methods: {
     ...mapMutations('box', ['setSelectedBox', 'setSelectedImage']),
-
     selectChampion(imageUrl, index) {
       if (this.disabledChampions.includes(index)) return;
       this.selectedChampionIndex = index;
@@ -649,6 +648,7 @@ export default {
       .post(`/banpick/tier/${this.selectedTier}`, { timeout: 5000 })
         .then(response => {
           console.log('Data sent successfully', response);
+          console.log('Data sent successfully', response.data);
           this.tierData = response.data[0];
           this.allData = response.data[0];
           this.topData = response.data[1];
@@ -1254,8 +1254,8 @@ box-shadow:  5px 5px 3px #b7b7b7,
 }
 
 .filter,
-.pick,
-.tier {
+.pick
+{
   display: flex;
   justify-content: space-between;
 }
@@ -1285,13 +1285,12 @@ box-shadow:  5px 5px 3px #b7b7b7,
 }
 
 .pick {
-  position: absolute;
-  right: 55%;
+
   color: #9752ff;
 }
 
 .tier {
-  width: 50% !important; /* 오른쪽 정렬 */
+  width: 100%;
   margin-top: 10px;
   margin-bottom: 13%;
   text-align: center;
@@ -1332,7 +1331,6 @@ box-shadow:  5px 5px 3px #b7b7b7,
 
 .custom-dropdown {
   position: relative;
-  display: inline-block;
   align-items: center;
   cursor: pointer;
   border: 2px solid #ccc;
