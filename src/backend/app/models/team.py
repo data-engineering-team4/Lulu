@@ -7,7 +7,6 @@ class AllTeam(Base):
 
     id = Column(Text, primary_key=True)
     champion_name = Column(Text)
-    win_rate = Column(Float)
     pick_rate = Column(BigInteger, nullable=False)
     my_lane = Column(Text, nullable=False)
     our_top = Column(Text, nullable=False)
@@ -27,7 +26,6 @@ class OpponentLane(Base):
 
     id = Column(Text, primary_key=True)
     champion_name = Column(Text)
-    win_rate = Column(Float)
     pick_rate = Column(BigInteger, nullable=False)
     my_lane = Column(Text, nullable=False)
     opponent_champ = Column(Text, nullable=False)
@@ -38,7 +36,6 @@ class OpponentTeam(Base):
 
     id = Column(Text, primary_key=True)
     champion_name = Column(Text)
-    win_rate = Column(Float)
     pick_rate = Column(BigInteger, nullable=False)
     my_lane = Column(Text, nullable=False)
     top = Column(Text, nullable=False)
@@ -53,7 +50,6 @@ class OurTeam(Base):
 
     id = Column(Text, primary_key=True)
     champion_name = Column(Text)
-    win_rate = Column(Float)
     pick_rate = Column(BigInteger, nullable=False)
     my_lane = Column(Text, nullable=False)
     top = Column(Text, nullable=False)

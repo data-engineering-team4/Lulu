@@ -195,21 +195,37 @@
                 <div class="recommend-section-first">
                   <div class="recommend-section-opponent-lane">
                     <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 2%;">상대 라이너</h3>
-                    <div class="recommend-section-part">챔피언초상화,이름,티어 3개 </div>
+                    <div class="recommend-section-part">
+                      <div class="opponent-team-recommend" v-for="item in opponent_lane_check_dicts" :key="item.championName">
+                        {{item.championName}}
+                      </div>
+                    </div>
                   </div>
                   <div class="recommend-section-our-team">
-                    <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 2%; ">우리팀 조합</h3>
-                    <div class="recommend-section-part">챔피언초상화,이름,티어 3개</div>
+                    <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 2%; ">상대팀 조합</h3>
+                    <div class="recommend-section-part">
+                      <div class="opponent-team-recommend" v-for="item in opponent_team_check_dicts" :key="item.championName">
+                        {{item.championName}}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="recommend-section-second">
                   <div class="recommend-section-all">
-                    <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 0%;">전체 조합</h3>
-                    <div class="recommend-section-part">챔피언초상화,이름,티어 3개</div>
+                    <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 0%;">우리팀 조합</h3>
+                      <div class="recommend-section-part">
+                      <div class="opponent-team-recommend" v-for="item in our_team_check_dicts" :key="item.championName">
+                        {{item.championName}}
+                      </div>
+                    </div>
                   </div>
                   <div class="recommend-section-final">
-                    <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 0%;">최종 조합</h3>
-                    <div class="recommend-section-part">챔피언초상화,이름,티어 3개 숙련도 고려</div>
+                    <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 0%;">전체 조합</h3>
+                    <div class="recommend-section-part">
+                      <div class="opponent-team-recommend" v-for="item in all_team_check_dicts" :key="item.championName">
+                        {{item.championName}}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -395,6 +411,12 @@ export default {
   },
   data() {
     return {
+      currentTimestamp: 0,
+      is_enable_produce: 0,
+      all_team_check_dicts:[],
+      our_team_check_dicts:[],
+      opponent_team_check_dicts:[],
+      opponent_lane_check_dicts:[],
       ourTeamSelected: false,
       opponentTeamSelected: false,
       our_boxes: [1, 2, 3, 4, 5],
@@ -457,6 +479,7 @@ export default {
       botData: [],
       supData: [],
       enKr: {},
+      obj: {},
       gamerHovered: false,
     };
   },
@@ -520,26 +543,95 @@ export default {
       this.opponentTeamSelected = true;
     },
     selectCircle(index) {
-      if (this.selectedLaneIndex === index) {
-        this.laneCircles = Array(5).fill(false);
-        this.selectedLaneIndex = null;
-        this.selectedOurLaneIndex = null;
-        this.teamInfo.myLane = -1;
-      } else {
-        this.laneCircles = this.laneCircles.map((selected, idx) => idx === index ? true : false);
-        this.selectedLaneIndex = index;
-        this.selectedOurLaneIndex = index;
-        this.teamInfo.myLane = this.selectedLaneIndex;
-      }
-      this.updateRecommendMasteryLane();
-      axios.post('/banpick/produce', this.teamInfo, { timeout: 5000 })
-        .then(response => {
-          console.log('Data sent successfully', response);
-        })
-        .catch(error => {
-          console.log('Error sending data', error);
-        });
-    },
+  if (this.selectedLaneIndex === index) {
+    this.laneCircles = Array(5).fill(false);
+    this.selectedLaneIndex = null;
+    this.selectedOurLaneIndex = null;
+    this.teamInfo.myLane = -1;
+  } else {
+    this.laneCircles = this.laneCircles.map((selected, idx) => idx === index ? true : false);
+    this.selectedLaneIndex = index;
+    this.selectedOurLaneIndex = index;
+    this.teamInfo.myLane = this.selectedLaneIndex;
+  }
+
+  this.updateRecommendMasteryLane();
+
+  if (this.is_enable_produce === 1 && this.teamInfo.myLane !== -1) {
+    axios.post('/banpick/produce', this.teamInfo)
+      .then(response => {
+        console.log('Data sent successfully', response);
+
+        const tableCheck = response.data.table_check;
+        this.all_team_check_dicts = response.data.all_team_check_dicts;
+        this.our_team_check_dicts = response.data.our_team_check_dicts;
+        this.opponent_team_check_dicts = response.data.opponent_team_check_dicts;
+        this.opponent_lane_check_dicts = response.data.opponent_lane_check_dicts;
+        const currentTimestamp = response.data.currentTimestamp;
+
+        const kindList = [];
+
+        if (tableCheck.includes("1")) kindList.push("allteam");
+        if (tableCheck.includes("2")) kindList.push("ourteam");
+        if (tableCheck.includes("3")) kindList.push("opponentteam");
+        if (tableCheck.includes("4")) kindList.push("opponentlane");
+
+        const requestData = { kinds: kindList, timestamp: currentTimestamp };
+
+        if (kindList.length > 0) {
+          console.log("consume");
+          axios.post('/banpick/consume', requestData)
+            .then(response => {
+              response.data.data.forEach((obj) => {
+                const key = Object.keys(obj)[0];
+                if (kindList.includes(key)) {
+                  if (key.startsWith('allteam')) {
+                    const tmp=  Object.values(obj[key]);
+                    const tmp2 = []
+                    for (let i=0; i<3; i++){
+                      tmp2.push({"championName":tmp[i]});
+                    }
+                    this.all_team_check_dicts = tmp2;
+                  }
+                  if (key.startsWith('ourteam')) {
+                    const tmp=  Object.values(obj[key]);
+                    const tmp2 = []
+                    for (let i=0; i<3; i++){
+                      tmp2.push({"championName":tmp[i]});
+                    }
+                    this.our_team_check_dicts = tmp2;
+                  }
+                  if (key.startsWith('opponentteam')) {
+                    const tmp=  Object.values(obj[key]);
+                    const tmp2 = []
+                    for (let i=0; i<3; i++){
+                      tmp2.push({"championName":tmp[i]});
+                    }
+                    this.opponent_team_check_dicts = tmp2;
+                  }
+                  if (key.startsWith('opponentlane')) {
+                    const tmp=  Object.values(obj[key]);
+                    const tmp2 = []
+                    for (let i=0; i<3; i++){
+                      tmp2.push({"championName":tmp[i]});
+                    }
+                    this.opponent_lane_check_dicts = tmp2;
+                  }
+                }
+              });
+
+            })
+
+            .catch(error => {
+              console.log('Error in consume call', error);
+            });
+        }
+      })
+      .catch(error => {
+        console.log('Error sending data', error);
+      });
+  }
+},
     updateRecommendMasteryLane() {
       if (this.selectedLaneIndex !== null) {
         this.recommendMasteryLaneContent = this.laneContent[this.selectedLaneIndex];
@@ -609,6 +701,7 @@ export default {
       this.selectedTier = tier;
     },
     showRecommendSection() {
+
       this.showSection = this.showSection !== true;
     },
     resetRecommendSection() {
@@ -641,6 +734,7 @@ export default {
         return {backgroundColor: '#008ffd'};
       } else {
         return { backgroundColor: '#ffffff' };
+
       }
     },
     getTier() {
@@ -747,39 +841,46 @@ export default {
       } else {
         alert('?!!!')
       }
-
+      if (this.is_enable_produce === 1)   {
       axios.post('/banpick/produce', this.teamInfo)
         .then(response => {
           console.log('Data sent successfully', response);
 
-          const tableCheck = response.table_check;
-          const all_team_check_dicts = response.all_team_check_dicts;
-          const our_team_check_dicts = response.our_team_check_dicts;
-          const opponent_team_check_dicts = response.opponent_team_check_dicts;
-          const opponent_lane_check_dicts = response.opponent_lane_check_dicts;
+          const tableCheck = response.data.table_check;
+          const all_team_check_dicts = response.data.all_team_check_dicts;
+          const our_team_check_dicts = response.data.our_team_check_dicts;
+          const opponent_team_check_dicts = response.data.opponent_team_check_dicts;
+          const opponent_lane_check_dicts = response.data.opponent_lane_check_dicts;
+          const currentTimestamp = response.data.currentTimestamp;
 
-          const consumerCall1 = tableCheck.includes("1") ? axios.get(`/consumer/allteam`) : Promise.resolve({ data: all_team_check_dicts });
-          const consumerCall2 = tableCheck.includes("2") ? axios.get(`/consumer/ourteam`) : Promise.resolve({ data: our_team_check_dicts });
-          const consumerCall3 = tableCheck.includes("3") ? axios.get(`/consumer/opponentteam`) : Promise.resolve({ data: opponent_team_check_dicts });
-          const consumerCall4 = tableCheck.includes("4") ? axios.get(`/consumer/opponentlane`) : Promise.resolve({ data: opponent_lane_check_dicts });
+          const resultList = [all_team_check_dicts, our_team_check_dicts, opponent_team_check_dicts, opponent_lane_check_dicts];
+          const kindList = [];
 
-          consumerCall1.then(response => {
-            console.log('ourteam', response);
-          });
-          consumerCall2.then(response => {
-            console.log('opponentteam', response);
-          });
-          consumerCall3.then(response => {
-            console.log('opponentlane', response);
-          });
-          consumerCall4.then(response => {
-            console.log('allteam', response);
-          });
+          if (tableCheck.includes("1")) kindList.push("allteam");
+          if (tableCheck.includes("2")) kindList.push("ourteam");
+          if (tableCheck.includes("3")) kindList.push("opponentteam");
+          if (tableCheck.includes("4")) kindList.push("opponentlane");
+
+          const requestData = { kinds: kindList ,timestamp: currentTimestamp };
+          console.log(kindList)
+          if (kindList.length > 0) {
+                  console.log("consume")
+                  axios.post('/banpick/consume', requestData)
+                    .then(response => {
+                      console.log(resultList)
+                      console.log(response)
+                    })
+                    .catch(error => {
+                      console.log('Error in consume call', error);
+                    });
+                }
+
 
         })
         .catch(error => {
           console.log('Error sending data', error);
         });
+    }
     }
   },
   mounted() {
@@ -1157,7 +1258,9 @@ box-shadow: inset 5px 5px 3px #b7b7b7,
 .recommend-section-table .recommend-head {
   color: rgb(184, 153, 255);
 }
-
+.opponent-team-recommend{
+  display: flex;
+}
 .recommend-section-first{
   width: 24vw;
   height: 48%;
@@ -1199,6 +1302,7 @@ background: linear-gradient(145deg, #d6d6d6, #ffffff);
 box-shadow:  5px 5px 6px #9b9b9b,
              -5px -5px 6px #ffffff;
   margin-left: 5%;
+  display: flex;
 }
 
 .our-neumorphism-style:active {

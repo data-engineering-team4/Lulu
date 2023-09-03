@@ -70,7 +70,7 @@ def process_team_data(team, query_list, my_lane, flag):
 
     if team_summary.count() == 0:
         team_summary = spark.createDataFrame(
-            [Row(champion_name="!!!", win_rate="!!!", pick_rate="!!!")]
+            [Row(champion_name="!!!", pick_rate="!!!")]
         )
 
     team_summary = team_summary.withColumn("my_lane", F.lit(my_lane))
@@ -106,8 +106,7 @@ def process_team_data(team, query_list, my_lane, flag):
         "team_summary": json.loads(team_summary_json),
         "extra_info": consumer_string,
     }
-    final_data_bytes = bytes(json.dumps(final_data), encoding="utf-8")
-
+    final_data_bytes = json.dumps(final_data)
     response = client.put_record(
         StreamName="sparktobackend", Data=final_data_bytes, PartitionKey="partition_key"
     )
@@ -135,7 +134,7 @@ def recommend(my_lane, our_team, opponent_team, table_check):
             team_summary = spark.sql(counter_team_summary_query.format(my_lane=my_lane))
             if team_summary.count() == 0:
                 team_summary = spark.createDataFrame(
-                    [Row(champion_name="!!!", win_rate="!!!", pick_rate="!!!")]
+                    [Row(champion_name="!!!", pick_rate="!!!")]
                 )
             team_summary = team_summary.withColumn("my_lane", F.lit(my_lane))
             generate_uuid_udf = F.udf(generate_uuid, StringType())
@@ -153,7 +152,7 @@ def recommend(my_lane, our_team, opponent_team, table_check):
                 "extra_info": "opponentlane",
             }
 
-            final_data_bytes = bytes(json.dumps(final_data), encoding="utf-8")
+            final_data_bytes = json.dumps(final_data)
 
             response = client.put_record(
                 StreamName="sparktobackend",
@@ -174,7 +173,7 @@ def recommend(my_lane, our_team, opponent_team, table_check):
         all_team_summary = spark.sql(all_team_summary_query.format(my_lane=my_lane))
         if all_team_summary.count() == 0:
             all_team_summary = spark.createDataFrame(
-                [Row(champion_name="!!!", win_rate="!!!", pick_rate="!!!")]
+                [Row(champion_name="!!!", pick_rate="!!!")]
             )
 
         positions = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"]
@@ -203,7 +202,7 @@ def recommend(my_lane, our_team, opponent_team, table_check):
             "extra_info": "allteam",
         }
 
-        all_final_data_bytes = bytes(json.dumps(all_final_data), encoding="utf-8")
+        all_final_data_bytes = json.dumps(all_final_data)
 
         response = client.put_record(
             StreamName="sparktobackend",

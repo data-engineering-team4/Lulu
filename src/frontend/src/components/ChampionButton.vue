@@ -116,8 +116,10 @@ export default {
       }
     },
     changeImage(index) {
+
       if (this.disabledChampions.includes(this.changeIndex(index))) return;
       this.$emit('select-champion', this.images[index], this.changeIndex(index));
+
     },
     updateBoxPosition(event) {
       this.boxTop = event.clientY + 10; // 10 픽셀 위로 이동
