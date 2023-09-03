@@ -85,7 +85,6 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
     our_team = {}
     opponent_team = {}
     table_check = []
-    # our_tema_result = []
 
     for lane, champ_id in team_info.ourTeam.items():
         new_lane = lane_mapping.get(int(lane))
@@ -117,6 +116,10 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
     if not all_team_check:
         table_check.append("1")
 
+    all_team_check_dicts = [row.__dict__ for row in all_team_check]
+    our_team_check_dicts = []
+    opponent_team_check_dicts = []
+    opponent_lane_check_dicts = []
     if our_team:
         our_team_check = (
             db.query(OurTeam)
@@ -132,6 +135,8 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
         )
         if not our_team_check:
             table_check.append("2")
+        our_team_check_dicts = [row.__dict__ for row in our_team_check]
+
 
     if opponent_team:
         opponent_team_check = (
@@ -148,6 +153,8 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
         )
         if not opponent_team_check:
             table_check.append("3")
+        opponent_team_check_dicts = [row.__dict__ for row in opponent_team_check]
+
 
     opponent_champ = opponent_team.get(my_lane, "???")
     if opponent_champ != "???":
@@ -161,6 +168,8 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
         )
         if not opponent_lane_check:
             table_check.append("4")
+        opponent_lane_check_dicts = [row.__dict__ for row in opponent_lane_check]
+
 
     print("Received data:", my_lane, our_team, opponent_team)
 
@@ -184,7 +193,12 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
             print("Kinesis Error", e)
             return {"error": str(e)}
 
-    return {"table_check": table_check}
+    return {"table_check": table_check,
+            "all_team_check_dicts": all_team_check_dicts,
+            "our_team_check_dicts": our_team_check_dicts,
+            "opponent_team_check_dicts": opponent_team_check_dicts,
+            "opponent_lane_check_dicts": opponent_lane_check_dicts
+            }
 
 
 @router.post("/banpick/search")
@@ -205,90 +219,27 @@ async def get_summoner_name(summoner_info: SummonerInfo, db: Session = Depends(g
         "recommendedProgamer": recommended_progamer.to_dict(orient="records"),
     }
 
-#
-# @router.post("/banpick/consume/1")
-# async def wait_our_team():
-#     shard_iterator = client.get_shard_iterator(
-#         StreamName="sparktobackend",
-#         ShardId="shardId-000000000001",
-#         ShardIteratorType="LATEST",
-#     )["ShardIterator"]
-#
-#     while True:
-#         response = client.get_records(ShardIterator=shard_iterator, Limit=100)
-#
-#         for record in response["Records"]:
-#             data = record["Data"].decode("utf-8")
-#             if data:
-#                 print(data)
-#                 return {
-#                     "our_team": data
-#                 }
-#         shard_iterator = response["NextShardIterator"]
-#         time.sleep(1)
-#
-#
-# @router.post("/banpick/consume/2")
-# async def wait_our_team():
-#     shard_iterator = client.get_shard_iterator(
-#         StreamName="sparktobackend",
-#         ShardId="shardId-000000000001",
-#         ShardIteratorType="LATEST",
-#     )["ShardIterator"]
-#
-#     while True:
-#         response = client.get_records(ShardIterator=shard_iterator, Limit=100)
-#
-#         for record in response["Records"]:
-#             data = record["Data"].decode("utf-8")
-#             if data:
-#                 print(data)
-#                 return {
-#                     "our_team": data
-#                 }
-#         shard_iterator = response["NextShardIterator"]
-#         time.sleep(1)
-#
-#
-# @router.post("/banpick/consume/3")
-# async def wait_our_team():
-#     shard_iterator = client.get_shard_iterator(
-#         StreamName="sparktobackend",
-#         ShardId="shardId-000000000001",
-#         ShardIteratorType="LATEST",
-#     )["ShardIterator"]
-#
-#     while True:
-#         response = client.get_records(ShardIterator=shard_iterator, Limit=100)
-#
-#         for record in response["Records"]:
-#             data = record["Data"].decode("utf-8")
-#             if data:
-#                 print(data)
-#                 return {
-#                     "our_team": data
-#                 }
-#         shard_iterator = response["NextShardIterator"]
-#         time.sleep(1)
-#
-#
-# @router.post("/banpick/consume/4")
-# async def wait_our_team():
-#     shard_iterator = client.get_shard_iterator(
-#         StreamName="sparktobackend",
-#         ShardId="shardId-000000000001",
-#         ShardIteratorType="LATEST",
-#     )["ShardIterator"]
-#
-#     while True:
-#         response = client.get_records(ShardIterator=shard_iterator, Limit=100)
-#
-#         for record in response["Records"]:
-#             data = record["Data"].decode("utf-8")
-#             if data:
-#                 print(data)
-#                 return {
-#                     "our_team": data
-#                 }
-#         shard_iterator = response["NextShardIterator"]
-#         time.sleep(1)
+
+@router.post("/banpick/consume/{team}")
+async def consume_team(team: str):
+
+    shard_iterator = client.get_shard_iterator(
+        StreamName="sparktobackend",
+        ShardId="shardId-000000000001",
+        ShardIteratorType="LATEST",
+    )["ShardIterator"]
+
+    while True:
+        response = client.get_records(ShardIterator=shard_iterator, Limit=100)
+
+        for record in response["Records"]:
+            data_str = record["Data"].decode("utf-8")
+            data_json = json.loads(data_str)
+            team_summary_received = data_json["team_summary"]
+            extra_info_received = data_json["extra_info"]
+            if extra_info_received == team:
+                return {
+                    "data": team_summary_received
+                }
+        shard_iterator = response["NextShardIterator"]
+        time.sleep(1)
