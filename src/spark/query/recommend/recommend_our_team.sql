@@ -1,5 +1,4 @@
 SELECT champion_name,
-        AVG(win) * 100 AS `win_rate`,
         COUNT(match_id) AS `pick_rate`
  FROM our_filtered_data
  WHERE position = "{my_lane}"

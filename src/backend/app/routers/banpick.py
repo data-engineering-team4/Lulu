@@ -13,6 +13,7 @@ from joblib import load
 import pandas as pd
 from io import BytesIO
 import time
+from datetime import datetime
 
 router = APIRouter()
 load_dotenv()
@@ -81,6 +82,7 @@ def get_db():
 
 @router.post("/banpick/produce")
 async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
+    current_time_milliseconds = datetime.utcnow()
     my_lane = lane_mapping.get(team_info.myLane + 1)
     our_team = {}
     opponent_team = {}
@@ -202,6 +204,7 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
 
     return {
         "table_check": table_check,
+        "currentTimestamp": current_time_milliseconds,
         "all_team_check_dicts": all_team_check_dicts,
         "our_team_check_dicts": our_team_check_dicts,
         "opponent_team_check_dicts": opponent_team_check_dicts,
@@ -230,30 +233,32 @@ async def get_summoner_name(summoner_info: SummonerInfo, db: Session = Depends(g
 
 @router.post("/banpick/consume")
 async def consume_team(request: Request):
+    request_data = await request.json()
+    timestamp = request_data['timestamp']
+    new_timestamp = timestamp.replace("T", " ")
     shard_iterator = client.get_shard_iterator(
         StreamName="sparktobackend",
         ShardId="shardId-000000000001",
-        ShardIteratorType="LATEST",
+        ShardIteratorType="AT_TIMESTAMP",
+        Timestamp=new_timestamp
     )["ShardIterator"]
-    request_data = await request.json()
     kinds_data_list = request_data["kinds"]
+    print(kinds_data_list)
     result_list = []
     while True:
-        response = client.get_records(ShardIterator=shard_iterator, Limit=10)
+        response = client.get_records(ShardIterator=shard_iterator, Limit=100)
 
         for record in response["Records"]:
             data_str = record["Data"].decode("utf-8")
             data_json = json.loads(data_str)
             team_summary_received = data_json["team_summary"]
             extra_info_received = data_json["extra_info"]
-            print(extra_info_received)
-            print(team_summary_received)
             if extra_info_received in kinds_data_list:
+                print(extra_info_received)
                 kinds_data_list.remove(extra_info_received)
-                result_list.append({extra_info_received:team_summary_received})
-                print(kinds_data_list)
-                print(result_list)
+                result_list.append({extra_info_received:team_summary_received['champion_name']})
                 if not kinds_data_list:
+                    print(result_list)
                     print("finish")
                     return {"data": result_list}
         shard_iterator = response["NextShardIterator"]

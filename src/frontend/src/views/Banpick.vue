@@ -383,6 +383,7 @@ export default {
   },
   data() {
     return {
+      currentTimestamp: 0,
       is_enable_produce: 0,
       all_team_check_dicts:[],
       our_team_check_dicts:[],
@@ -447,7 +448,8 @@ export default {
       midData: [],
       botData: [],
       supData: [],
-      enKr: {}
+      enKr: {},
+      obj: {}
     };
   },
   watch: {
@@ -511,58 +513,95 @@ export default {
       this.opponentTeamSelected = true;
     },
     selectCircle(index) {
-      if (this.selectedLaneIndex === index) {
-        this.laneCircles = Array(5).fill(false);
-        this.selectedLaneIndex = null;
-        this.selectedOurLaneIndex = null;
-        this.teamInfo.myLane = -1;
-      } else {
-        this.laneCircles = this.laneCircles.map((selected, idx) => idx === index ? true : false);
-        this.selectedLaneIndex = index;
-        this.selectedOurLaneIndex = index;
-        this.teamInfo.myLane = this.selectedLaneIndex;
-      }
-      this.updateRecommendMasteryLane();
-if (this.is_enable_produce === 1&& this.teamInfo.myLane !==-1) {
-      axios.post('/banpick/produce', this.teamInfo)
-        .then(response => {
-          console.log('Data sent successfully', response);
+  if (this.selectedLaneIndex === index) {
+    this.laneCircles = Array(5).fill(false);
+    this.selectedLaneIndex = null;
+    this.selectedOurLaneIndex = null;
+    this.teamInfo.myLane = -1;
+  } else {
+    this.laneCircles = this.laneCircles.map((selected, idx) => idx === index ? true : false);
+    this.selectedLaneIndex = index;
+    this.selectedOurLaneIndex = index;
+    this.teamInfo.myLane = this.selectedLaneIndex;
+  }
 
-          const tableCheck = response.data.table_check;
-          const all_team_check_dicts = response.data.all_team_check_dicts;
-          const our_team_check_dicts = response.data.our_team_check_dicts;
-          const opponent_team_check_dicts = response.data.opponent_team_check_dicts;
-          const opponent_lane_check_dicts = response.data.opponent_lane_check_dicts;
+  this.updateRecommendMasteryLane();
 
-          const resultList = [all_team_check_dicts, our_team_check_dicts, opponent_team_check_dicts, opponent_lane_check_dicts];
-          const kindList = [];
+  if (this.is_enable_produce === 1 && this.teamInfo.myLane !== -1) {
+    axios.post('/banpick/produce', this.teamInfo)
+      .then(response => {
+        console.log('Data sent successfully', response);
 
-          if (tableCheck.includes("1")) kindList.push("allteam");
-          if (tableCheck.includes("2")) kindList.push("ourteam");
-          if (tableCheck.includes("3")) kindList.push("opponentteam");
-          if (tableCheck.includes("4")) kindList.push("opponentlane");
+        const tableCheck = response.data.table_check;
+        this.all_team_check_dicts = response.data.all_team_check_dicts;
+        this.our_team_check_dicts = response.data.our_team_check_dicts;
+        this.opponent_team_check_dicts = response.data.opponent_team_check_dicts;
+        this.opponent_lane_check_dicts = response.data.opponent_lane_check_dicts;
+        const currentTimestamp = response.data.currentTimestamp;
 
-          const requestData = { kinds: kindList };
-          console.log(kindList)
-          if (kindList.length > 0) {
-                  console.log("consume")
-                  axios.post('/banpick/consume', requestData)
-                    .then(response => {
-                      console.log(resultList)
-                      console.log(response)
-                    })
-                    .catch(error => {
-                      console.log('Error in consume call', error);
-                    });
+        const kindList = [];
+
+        if (tableCheck.includes("1")) kindList.push("allteam");
+        if (tableCheck.includes("2")) kindList.push("ourteam");
+        if (tableCheck.includes("3")) kindList.push("opponentteam");
+        if (tableCheck.includes("4")) kindList.push("opponentlane");
+
+        const requestData = { kinds: kindList, timestamp: currentTimestamp };
+
+        if (kindList.length > 0) {
+          console.log("consume");
+          axios.post('/banpick/consume', requestData)
+            .then(response => {
+              response.data.data.forEach((obj) => {
+                const key = Object.keys(obj)[0];
+                if (kindList.includes(key)) {
+                  if (key.startsWith('allteam')) {
+                    const tmp=  Object.values(obj[key]);
+                    const tmp2 = []
+                    for (let i=0; i<3; i++){
+                      tmp2.push({"championName":tmp[i]});
+                    }
+                    this.all_team_check_dicts = tmp2;
+                  }
+                  if (key.startsWith('ourteam')) {
+                    const tmp=  Object.values(obj[key]);
+                    const tmp2 = []
+                    for (let i=0; i<3; i++){
+                      tmp2.push({"championName":tmp[i]});
+                    }
+                    this.our_team_check_dicts = tmp2;
+                  }
+                  if (key.startsWith('opponentteam')) {
+                    const tmp=  Object.values(obj[key]);
+                    const tmp2 = []
+                    for (let i=0; i<3; i++){
+                      tmp2.push({"championName":tmp[i]});
+                    }
+                    this.opponent_team_check_dicts = tmp2;
+                  }
+                  if (key.startsWith('opponentlane')) {
+                    const tmp=  Object.values(obj[key]);
+                    const tmp2 = []
+                    for (let i=0; i<3; i++){
+                      tmp2.push({"championName":tmp[i]});
+                    }
+                    this.opponent_lane_check_dicts = tmp2;
+                  }
                 }
+              });
 
+            })
 
-        })
-        .catch(error => {
-          console.log('Error sending data', error);
-        });
-    }
-    },
+            .catch(error => {
+              console.log('Error in consume call', error);
+            });
+        }
+      })
+      .catch(error => {
+        console.log('Error sending data', error);
+      });
+  }
+},
     updateRecommendMasteryLane() {
       if (this.selectedLaneIndex !== null) {
         this.recommendMasteryLaneContent = this.laneContent[this.selectedLaneIndex];
@@ -739,6 +778,7 @@ if (this.is_enable_produce === 1&& this.teamInfo.myLane !==-1) {
           const our_team_check_dicts = response.data.our_team_check_dicts;
           const opponent_team_check_dicts = response.data.opponent_team_check_dicts;
           const opponent_lane_check_dicts = response.data.opponent_lane_check_dicts;
+          const currentTimestamp = response.data.currentTimestamp;
 
           const resultList = [all_team_check_dicts, our_team_check_dicts, opponent_team_check_dicts, opponent_lane_check_dicts];
           const kindList = [];
@@ -748,7 +788,7 @@ if (this.is_enable_produce === 1&& this.teamInfo.myLane !==-1) {
           if (tableCheck.includes("3")) kindList.push("opponentteam");
           if (tableCheck.includes("4")) kindList.push("opponentlane");
 
-          const requestData = { kinds: kindList };
+          const requestData = { kinds: kindList ,timestamp: currentTimestamp };
           console.log(kindList)
           if (kindList.length > 0) {
                   console.log("consume")
@@ -1128,7 +1168,9 @@ box-shadow:  5px 5px 6px #9b9b9b,
 box-shadow: inset 5px 5px 3px #b7b7b7,
             inset -5px -5px 3px #ffffff;
 }
-
+.opponent-team-recommend{
+  display: flex;
+}
 .recommend-section-first{
   width: 24vw;
   height: 48%;
