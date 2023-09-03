@@ -81,46 +81,46 @@
                   </div>
                   <div v-else class="placeholder">티어를 선택하세요!</div>
                   <ul v-show="isDropdownOpen" class="dropdown-options">
-                    <li @click="selectTier('all')" class="tier-item">
+                    <li @click="selectTier('all'), getTier()" class="tier-item">
                       <span class="tier-text0">All</span>
                     </li>
-                    <li @click="selectTier('challenger')" class="tier-item">
+                    <li @click="selectTier('challenger'), getTier()" class="tier-item">
                       <img src="@/assets/tier/challenger.webp" class="tier-icon" />
                       <span class="tier-text">Challenger</span>
                     </li>
-                    <li @click="selectTier('grandmaster')" class="tier-item">
+                    <li @click="selectTier('grandmaster'), getTier()" class="tier-item">
                       <img src="@/assets/tier/grandmaster.webp" class="tier-icon" />
                       <span class="tier-text">Grandmaster</span>
                     </li>
-                    <li @click="selectTier('master')" class="tier-item">
+                    <li @click="selectTier('master'), getTier()" class="tier-item">
                       <img src="@/assets/tier/master.webp" class="tier-icon" />
                       <span class="tier-text">Master</span>
                     </li>
-                    <li @click="selectTier('diamond')" class="tier-item">
+                    <li @click="selectTier('diamond'), getTier()" class="tier-item">
                       <img src="@/assets/tier/diamond.webp" class="tier-icon" />
                       <span class="tier-text">Diamond</span>
                     </li>
-                    <li @click="selectTier('emerald')" class="tier-item">
+                    <li @click="selectTier('emerald'), getTier()" class="tier-item">
                       <img src="@/assets/tier/emerald.webp" class="tier-icon" />
                       <span class="tier-text">Emerald</span>
                     </li>
-                    <li @click="selectTier('platinum')" class="tier-item">
+                    <li @click="selectTier('platinum'), getTier()" class="tier-item">
                       <img src="@/assets/tier/platinum.webp" class="tier-icon" />
                       <span class="tier-text">Platinum</span>
                     </li>
-                    <li @click="selectTier('gold')" class="tier-item">
+                    <li @click="selectTier('gold'), getTier()" class="tier-item">
                       <img src="@/assets/tier/gold.webp" class="tier-icon" />
                       <span class="tier-text">Gold</span>
                     </li>
-                    <li @click="selectTier('silver')" class="tier-item">
+                    <li @click="selectTier('silver'), getTier()" class="tier-item">
                       <img src="@/assets/tier/silver.webp" class="tier-icon" />
                       <span class="tier-text">Silver</span>
                     </li>
-                    <li @click="selectTier('bronze')" class="tier-item">
+                    <li @click="selectTier('bronze'), getTier()" class="tier-item">
                       <img src="@/assets/tier/bronze.webp" class="tier-icon" />
                       <span class="tier-text">Bronze</span>
                     </li>
-                    <li @click="selectTier('iron')" class="tier-item">
+                    <li @click="selectTier('iron'), getTier()" class="tier-item">
                       <img src="@/assets/tier/iron.webp" class="tier-icon" />
                       <span class="tier-text">Iron</span>
                     </li>
@@ -131,7 +131,7 @@
           </div>
           <div class="champion-buttons-husks">
           <div class="champion-buttons">
-            <ChampionButton :selectedChampionIndex="selectedChampionIndex" :disabledChampions="disabledChampions" :selectedButtonIndex="selectedButtonIndex" @select-champion="selectChampion" />
+            <ChampionButton :selectedChampionIndex="selectedChampionIndex" :disabledChampions="disabledChampions" :selectedButtonIndex="selectedButtonIndex" :tierData="tierData" @select-champion="selectChampion" />
           </div>
             </div>
           <div>
@@ -212,7 +212,140 @@
                 </div>
               </div>
               <div v-else class="recommend-section-table">
-                {{ tierData[1] }}
+                <div class = "filter2" style="align-items: center; width: 100%;">
+                  <div class="recommend-mastery-title custom-font" style="flex: 2; margin-top: 0; font-size: 120%;">추천 챔피언</div>
+                  <div style="flex: 1.3; margin-right: 10%;">
+                    <button class="button2" :class="{ active: buttons2[0] }" @click="filterButton(0)">
+                      <img src="@/assets/bottom.png" style="max-width: 100%; max-height: 100%;" />
+                    </button>
+                    <button class="button2" :class="{ active: buttons2[1] }" @click="filterButton(1)">
+                      <img src="@/assets/jug.png" style="max-width: 100%; max-height: 100%;" />
+                    </button>
+                    <button class="button2" :class="{ active: buttons2[2] }" @click="filterButton(2)">
+                      <img src="@/assets/mid.png" style="max-width: 100%; max-height: 100%;" />
+                    </button>
+                    <button class="button2" :class="{ active: buttons2[3] }" @click="filterButton(3)">
+                      <img src="@/assets/top.png" style="max-width: 100%; max-height: 100%;" />
+                    </button>
+                    <button class="button2" :class="{ active: buttons2[4] }" @click="filterButton(4)">
+                      <img src="@/assets/sup.png" style="max-width: 100%; max-height: 100%;" />
+                    </button>
+                  </div>
+                </div>
+                <div style="margin-top: 3%; justify-content: center; height: 100%;">
+                  <div class="tier-page">
+                    <div style="height: 100%;">
+                      <div v-if="buttons2[0] == true" style="height: 100%;">
+                        <div style="height: 100%;">
+                          <div style="display: flex; height: 10%; align-items: center;">
+                            <div style="flex: 1; width: 70%;"></div>
+                            <div class="custom-font" style="flex: 1;">이름</div>
+                            <div class="custom-font" style="flex: 1;">픽률</div>
+                            <div class="custom-font" style="flex: 1;">승률</div>
+                            <div class="custom-font" style="flex: 1;">벤률</div>
+                          </div>
+                          <div v-for="(item, index) in topData.slice(0, 5)" :key="index" style="display: flex; height: 17.5%; align-items: center; border: 1px solid #ccc;">
+                            <img class="round-image" :src="getImage(getChampionName(item.champion_id))" style="width: 60%; height: 80%; flex: 0.7;" />
+                            <div class="custom-light-font" style="flex: 1;">{{ enKr[item.champion_name] }}</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ parseFloat(item.pick_rate).toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.win_rate.toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.ban_rate.toFixed(2) }}%</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-if="buttons2[1] == true" style="height: 100%;">
+                        <div style="height: 100%;">
+                          <div style="display: flex; height: 10%; align-items: center;">
+                            <div style="flex: 1; width: 70%;"></div>
+                            <div class="custom-font" style="flex: 1;">이름</div>
+                            <div class="custom-font" style="flex: 1;">픽률</div>
+                            <div class="custom-font" style="flex: 1;">승률</div>
+                            <div class="custom-font" style="flex: 1;">벤률</div>
+                          </div>
+                          <div v-for="(item, index) in jugData.slice(0, 5)" :key="index" style="display: flex; height: 17.5%; align-items: center; border: 1px solid #ccc;">
+                            <img class="round-image" :src="getImage(getChampionName(item.champion_id))" style="width: 70%; height: 80%; flex: 0.7;" />
+                            <div class="custom-light-font" style="flex: 1;">{{ enKr[item.champion_name] }}</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ parseFloat(item.pick_rate).toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.win_rate.toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.ban_rate.toFixed(2) }}%</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-if="buttons2[2] == true" style="height: 100%;">
+                        <div style="height: 100%;">
+                          <div style="display: flex; height: 10%; align-items: center;">
+                            <div style="flex: 1; width: 70%;"></div>
+                            <div class="custom-font" style="flex: 1;">이름</div>
+                            <div class="custom-font" style="flex: 1;">픽률</div>
+                            <div class="custom-font" style="flex: 1;">승률</div>
+                            <div class="custom-font" style="flex: 1;">벤률</div>
+                          </div>
+                          <div v-for="(item, index) in midData.slice(0, 5)" :key="index" style="display: flex; height: 17.5%; align-items: center; border: 1px solid #ccc;">
+                            <img class="round-image" :src="getImage(getChampionName(item.champion_id))" style="width: 70%; height: 80%; flex: 0.7;" />
+                            <div class="custom-light-font" style="flex: 1;">{{ enKr[item.champion_name] }}</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ parseFloat(item.pick_rate).toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.win_rate.toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.ban_rate.toFixed(2) }}%</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-if="buttons2[3] == true" style="height: 100%;">
+                        <div style="height: 100%;">
+                          <div style="display: flex; height: 10%; align-items: center;">
+                            <div style="flex: 1; width: 70%;"></div>
+                            <div class="custom-font" style="flex: 1;">이름</div>
+                            <div class="custom-font" style="flex: 1;">픽률</div>
+                            <div class="custom-font" style="flex: 1;">승률</div>
+                            <div class="custom-font" style="flex: 1;">벤률</div>
+                          </div>
+                          <div v-for="(item, index) in botData.slice(0, 5)" :key="index" style="display: flex; height: 17.5%; align-items: center; border: 1px solid #ccc;">
+                            <img class="round-image" :src="getImage(getChampionName(item.champion_id))" style="width: 70%; height: 80%; flex: 0.7;" />
+                            <div class="custom-light-font" style="flex: 1;">{{ enKr[item.champion_name] }}</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ parseFloat(item.pick_rate).toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.win_rate.toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.ban_rate.toFixed(2) }}%</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-if="buttons2[4] == true" style="height: 100%;">
+                        <div style="height: 100%;">
+                          <div style="display: flex; height: 10%; align-items: center;">
+                            <div style="flex: 1; width: 70%;"></div>
+                            <div class="custom-font" style="flex: 1;">이름</div>
+                            <div class="custom-font" style="flex: 1;">픽률</div>
+                            <div class="custom-font" style="flex: 1;">승률</div>
+                            <div class="custom-font" style="flex: 1;">벤률</div>
+                          </div>
+                          <div v-for="(item, index) in supData.slice(0, 5)" :key="index" style="display: flex; height: 17.5%; align-items: center; border: 1px solid #ccc;">
+                            <img class="round-image" :src="getImage(getChampionName(item.champion_id))" style="width: 70%; height: 80%; flex: 0.7;" />
+                            <div class="custom-light-font" style="flex: 1;">{{ enKr[item.champion_name] }}</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ parseFloat(item.pick_rate).toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.win_rate.toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.ban_rate.toFixed(2) }}%</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-if="!buttons2.some(Boolean)" style="height: 100%;">
+                        <div style="height: 100%;">
+                          <div style="display: flex; height: 10%; align-items: center;">
+                            <div style="flex: 1; width: 70%;"></div>
+                            <div class="custom-font" style="flex: 1;">이름</div>
+                            <div class="custom-font" style="flex: 1;">픽률</div>
+                            <div class="custom-font" style="flex: 1;">승률</div>
+                            <div class="custom-font" style="flex: 1;">벤률</div>
+                          </div>
+                          <div v-for="(item, index) in allData.slice(0, 5)" :key="index" style="display: flex; height: 17.5%; align-items: center; border: 1px solid #ccc;">
+                            <img class="round-image" :src="getImage(getChampionName(item.champion_id))" style="width: 70%; height: 80%; flex: 0.7;" />
+                            <div class="custom-light-font" style="flex: 1;">{{ enKr[item.champion_name] }}</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ parseFloat(item.pick_rate).toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.win_rate.toFixed(2) }}%</div>
+                            <div class="custom-light-font" style="flex: 1;">{{ item.ban_rate.toFixed(2) }}%</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -266,6 +399,7 @@ export default {
       summonerInfoLoaded: false,
       championMapping: {},
       buttons: [false, false, false, false, false],
+      buttons2: [false, false, false, false, false],
       selectedButtonIndex: null,
       userLane: null,
       masteryId: [],
@@ -281,11 +415,18 @@ export default {
       championBot: {},
       championSup: {},
       selectMastery: [],
-      selectedTier: 'challenger',
+      selectedTier: 'all',
       selectedPosition: 'TOP',
       isDropdownOpen: false,
       showSection: false,
-      tierData: {}
+      tierData: {},
+      allData: [],
+      topData: [],
+      jugData: [],
+      midData: [],
+      botData: [],
+      supData: [],
+      enKr: {}
     };
   },
   watch: {
@@ -414,7 +555,15 @@ export default {
         this.buttons[index] = !this.buttons[index];
         this.selectedButtonIndex = null;
       }
-      
+    },
+    filterButton(index) {
+      if (this.buttons2[index] == false) {
+        this.buttons2 = [false, false, false, false, false]
+
+        this.buttons2[index] = !this.buttons2[index];
+      } else {
+        this.buttons2[index] = !this.buttons2[index];
+      }
     },
     updateUserLane(index) {
       if (this.userLane === index) {
@@ -438,10 +587,16 @@ export default {
     },
     getTier() {
       axios
-      .post(`/banpick/tier/${this.selectedTier}/${this.selectedPosition}`, { timeout: 5000 })
+      .post(`/banpick/tier/${this.selectedTier}`, { timeout: 5000 })
         .then(response => {
           console.log('Data sent successfully', response);
-          this.tierData = response.data
+          this.tierData = response.data[0];
+          this.allData = response.data[0];
+          this.topData = response.data[1];
+          this.jugData = response.data[2];
+          this.midData = response.data[3];
+          this.botData = response.data[4];
+          this.supData = response.data[5];
         })
         .catch(error => {
           console.log('Error sending data', error);
@@ -586,6 +741,11 @@ export default {
       .then(response => response.json())
       .then(data => {
         this.championSup = data;
+      });
+    fetch('/champion_mapping_en_kr.json')
+      .then(response => response.json())
+      .then(data => {
+        this.enKr = data;
       });
   }
 };
@@ -1004,6 +1164,7 @@ box-shadow:  5px 5px 3px #b7b7b7,
 }
 
 .filter,
+.filter2
 .pick,
 .tier {
   display: flex;
@@ -1016,6 +1177,13 @@ box-shadow:  5px 5px 3px #b7b7b7,
   margin-left: 1%;
   margin-top: 13%;
   margin-bottom: 2%;
+}
+
+.filter2 {
+  display: flex;
+  justify-content: center;
+  padding-top: 4%;
+  padding-left: 5%;
 }
 
 .pick {
@@ -1041,6 +1209,22 @@ box-shadow:  5px 5px 3px #b7b7b7,
   margin-left: 3%;
 }
 .button1.active {
+  filter: hue-rotate(230deg);
+  box-shadow: inset 1px 1px 2px #d1d1d1, inset -1px -1px 2px #ffffff;
+}
+.button2 {
+  filter: grayscale(100%);
+  background: #eeeeee;
+  box-shadow:  2px 2px 1px #b7b7b7,
+              -2px -2px 1px #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 16%;
+  margin-top: 7%;
+  margin-left: 3%;
+}
+.button2.active {
   filter: hue-rotate(230deg);
   box-shadow: inset 1px 1px 2px #d1d1d1, inset -1px -1px 2px #ffffff;
 }
@@ -1101,5 +1285,14 @@ box-shadow:  5px 5px 3px #b7b7b7,
 .tier-text {
   margin-right: 5%;
   flex-grow: 1;
+}
+.tier-page {
+  width: 90%;
+  height: 80%;
+  margin-left: 5%;
+  justify-content: center;
+  background: linear-gradient(145deg, #d6d6d6, #ffffff);
+  box-shadow:  3px 3px 4px #9b9b9b,
+              -3px -3px 4px #ffffff;
 }
 </style>

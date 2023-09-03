@@ -11,5 +11,6 @@ class tb_info(Base):
     pick_rate = Column(Float)
     ban_rate = Column(Float)
     kda = Column(Float)
-    champion_id = Column(Integer, primary_key=True)
+    champion_id = Column(Integer)
     champion_tier = Column(Float)
+    uuid = Column(String, primary_key=True)
