@@ -1,6 +1,6 @@
 <template>
   <div class="champion-buttons-container">
-    <div v-for="(image, index) in images" :key="index" class="champion-button" :class="{ disabled: disabledChampions.includes(index) }" :style="{border: index === selectedChampionIndex ? '8px solid #6438af' : '' }">
+    <div v-for="(image, index) in images" :key="index" class="champion-button" :class="{ disabled: disabledChampions.includes(this.changeIndex(index)) }" :style="{border: this.changeIndex(index) === selectedChampionIndex ? '8px solid #6438af' : '' }">
       <img :src="image" @click="changeImage(index)" style="max-width: 90%; max-height: 90%;" @mousemove="updateBoxPosition" @mouseenter="showBox(index)" @mouseleave="hideBox"/>
       <div v-if="isBoxVisible && hoveredIndex === index" class="image-box" :style="{ top: boxTop + 'px', left: boxLeft + 'px' }">
         <img :src="image" @click="changeImage(index)" style="max-width: 40%; max-height: 40%; float: left; margin-right: 10px;"/>
@@ -10,15 +10,15 @@
         <div class="info-label-container">
           <div class="info-label1">
             <div>픽률</div>
-            <div class="info-label2">{{ getPick(getId(champions[index+1])) }}%</div>
+            <div class="info-label2">{{ getPick(getId(champions[index+1])) !== 0 ? getPick(getId(champions[index+1])) + '%' : '표본 부족' }}</div>
           </div>
           <div class="info-label1">
             <div>승률</div>
-            <div class="info-label2">{{ getWin(getId(champions[index+1])) }}%</div>
+            <div class="info-label2">{{ getWin(getId(champions[index+1])) !== 0 ? getWin(getId(champions[index+1])) + '%' : '표본 부족' }}</div>
           </div>
           <div class="info-label1">
             <div>벤률</div>
-            <div class="info-label2">{{ getBan(getId(champions[index+1])) }}%</div>
+            <div class="info-label2">{{ getBan(getId(champions[index+1])) !== 0 ? getBan(getId(champions[index+1])) + '%' : '표본 부족' }}</div>
           </div>
         </div>
         <div class="info-label3">
@@ -74,6 +74,7 @@ export default {
       pick: 0,
       champions_map: {},
       id: '',
+      championsIndex: {},
     };
   },
   watch: {
@@ -107,10 +108,16 @@ export default {
     }
   },
   methods: {
+    changeIndex(index) {
+      const championValues = Object.values(this.champions);
+      if (index >= 0 && index < championValues.length) {
+      const foundIndex = Object.keys(this.championsIndex).find(key => this.championsIndex[key] === championValues[index]);
+      return foundIndex-1;
+      }
+    },
     changeImage(index) {
-      if (this.disabledChampions.includes(index)) return;
-      this.getName();
-      this.$emit('select-champion', this.images[index], index);
+      if (this.disabledChampions.includes(this.changeIndex(index))) return;
+      this.$emit('select-champion', this.images[index], this.changeIndex(index));
     },
     updateBoxPosition(event) {
       this.boxTop = event.clientY + 10; // 10 픽셀 위로 이동
@@ -165,6 +172,7 @@ export default {
           return parseFloat(pickRate);
         }
       }
+      return 0;
     },
     getWin(id) {
       for (let i = 0; i < this.tierData.length; i++) {
@@ -173,6 +181,7 @@ export default {
           return parseFloat(winRate);
         }
       }
+      return 0;
     },
     getBan(id) {
       for (let i = 0; i < this.tierData.length; i++) {
@@ -181,6 +190,7 @@ export default {
           return parseFloat(banRate);
         }
       }
+      return 0;
     }
   },
   mounted() {
@@ -210,6 +220,12 @@ export default {
       .then(response => response.json())
       .then(data => {
         this.champions_map = data;
+      });
+
+    fetch('/champions.json')
+      .then(response => response.json())
+      .then(data => {
+        this.championsIndex = data;
       });
 
   }
