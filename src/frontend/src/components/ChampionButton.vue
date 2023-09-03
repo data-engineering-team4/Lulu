@@ -109,7 +109,7 @@ export default {
   methods: {
     changeImage(index) {
       if (this.disabledChampions.includes(index)) return;
-      this.getName();
+      // this.getName();
       this.$emit('select-champion', this.images[index], index);
     },
     updateBoxPosition(event) {

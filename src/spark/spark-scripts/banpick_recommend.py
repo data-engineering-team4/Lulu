@@ -70,7 +70,7 @@ def process_team_data(team, query_list, my_lane, flag):
 
     if team_summary.count() == 0:
         team_summary = spark.createDataFrame(
-            [Row(champion_name="!!!",  pick_rate="!!!")]
+            [Row(champion_name="!!!", pick_rate="!!!")]
         )
 
     team_summary = team_summary.withColumn("my_lane", F.lit(my_lane))
@@ -134,7 +134,7 @@ def recommend(my_lane, our_team, opponent_team, table_check):
             team_summary = spark.sql(counter_team_summary_query.format(my_lane=my_lane))
             if team_summary.count() == 0:
                 team_summary = spark.createDataFrame(
-                    [Row(champion_name="!!!",  pick_rate="!!!")]
+                    [Row(champion_name="!!!", pick_rate="!!!")]
                 )
             team_summary = team_summary.withColumn("my_lane", F.lit(my_lane))
             generate_uuid_udf = F.udf(generate_uuid, StringType())
@@ -173,7 +173,7 @@ def recommend(my_lane, our_team, opponent_team, table_check):
         all_team_summary = spark.sql(all_team_summary_query.format(my_lane=my_lane))
         if all_team_summary.count() == 0:
             all_team_summary = spark.createDataFrame(
-                [Row(champion_name="!!!",  pick_rate="!!!")]
+                [Row(champion_name="!!!", pick_rate="!!!")]
             )
 
         positions = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"]

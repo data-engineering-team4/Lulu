@@ -234,13 +234,13 @@ async def get_summoner_name(summoner_info: SummonerInfo, db: Session = Depends(g
 @router.post("/banpick/consume")
 async def consume_team(request: Request):
     request_data = await request.json()
-    timestamp = request_data['timestamp']
+    timestamp = request_data["timestamp"]
     new_timestamp = timestamp.replace("T", " ")
     shard_iterator = client.get_shard_iterator(
         StreamName="sparktobackend",
         ShardId="shardId-000000000001",
         ShardIteratorType="AT_TIMESTAMP",
-        Timestamp=new_timestamp
+        Timestamp=new_timestamp,
     )["ShardIterator"]
     kinds_data_list = request_data["kinds"]
     print(kinds_data_list)
@@ -256,7 +256,9 @@ async def consume_team(request: Request):
             if extra_info_received in kinds_data_list:
                 print(extra_info_received)
                 kinds_data_list.remove(extra_info_received)
-                result_list.append({extra_info_received:team_summary_received['champion_name']})
+                result_list.append(
+                    {extra_info_received: team_summary_received["champion_name"]}
+                )
                 if not kinds_data_list:
                     print(result_list)
                     print("finish")
