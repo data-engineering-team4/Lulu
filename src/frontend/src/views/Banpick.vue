@@ -195,17 +195,19 @@
                 <div class="recommend-section-first">
                   <div class="recommend-section-opponent-lane">
                     <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 2%;">상대 라이너</h3>
-                    <div class="recommend-section-part">
-                      <div class="opponent-team-recommend" v-for="item in opponent_lane_check_dicts" :key="item.championName">
-                        {{item.championName}}
+                    <div class="recommend-section-part" style="display: flex; align-items: center;">
+                      <div v-for="item in opponent_lane_check_dicts" :key="item.championName" class="opponent-team-recommend" style="width: 33%; flex:1; flex-direction: column; align-items: center;">
+                        <img :src="getImage(item.championName)" style="max-width: 80%;max-height: 80%;">
+                        <div class="custom-font" style="margin-top:10%">{{ getRank(item.championName) }}위</div>
                       </div>
                     </div>
                   </div>
                   <div class="recommend-section-our-team">
                     <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 2%; ">상대팀 조합</h3>
-                    <div class="recommend-section-part">
-                      <div class="opponent-team-recommend" v-for="item in opponent_team_check_dicts" :key="item.championName">
-                        {{item.championName}}
+                    <div class="recommend-section-part" style="display: flex; align-items: center;">
+                      <div v-for="item in opponent_team_check_dicts" :key="item.championName" class="opponent-team-recommend" style="width: 33%; flex:1; flex-direction: column; align-items: center;">
+                        <img :src="getImage(item.championName)" style="max-width: 80%;max-height: 80%;">
+                        <div class="custom-font" style="margin-top:10%">{{ getRank(item.championName) }}위</div>
                       </div>
                     </div>
                   </div>
@@ -213,17 +215,19 @@
                 <div class="recommend-section-second">
                   <div class="recommend-section-all">
                     <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 0%;">우리팀 조합</h3>
-                      <div class="recommend-section-part">
-                      <div class="opponent-team-recommend" v-for="item in our_team_check_dicts" :key="item.championName">
-                        {{item.championName}}
+                    <div class="recommend-section-part" style="display: flex; align-items: center;">
+                      <div v-for="item in our_team_check_dicts" :key="item.championName" class="opponent-team-recommend" style="width: 33%; flex:1; flex-direction: column; align-items: center;">
+                        <img :src="getImage(item.championName)" style="max-width: 80%;max-height: 80%;">
+                        <div class="custom-font" style="margin-top:10%">{{ getRank(item.championName) }}위</div>
                       </div>
                     </div>
                   </div>
                   <div class="recommend-section-final">
                     <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 0%;">전체 조합</h3>
-                    <div class="recommend-section-part">
-                      <div class="opponent-team-recommend" v-for="item in all_team_check_dicts" :key="item.championName">
-                        {{item.championName}}
+                    <div class="recommend-section-part" style="display: flex; align-items: center;">
+                      <div v-for="item in all_team_check_dicts" :key="item.championName" class="opponent-team-recommend" style="width: 33%; flex:1; flex-direction: column; align-items: center;">
+                        <img :src="getImage(item.championName)" style="max-width: 80%;max-height: 80%;">
+                        <div class="custom-font" style="margin-top:10%">{{ getRank(item.championName) }}위</div>
                       </div>
                     </div>
                   </div>
@@ -560,7 +564,7 @@ export default {
   if (this.is_enable_produce === 1 && this.teamInfo.myLane !== -1) {
     axios.post('/banpick/produce', this.teamInfo)
       .then(response => {
-        console.log('Data sent successfully', response);
+        console.log('Data sent successfully11', response);
 
         const tableCheck = response.data.table_check;
         this.all_team_check_dicts = response.data.all_team_check_dicts;
@@ -741,6 +745,33 @@ export default {
         return { backgroundColor: '#ffffff' };
 
       }
+    },
+    getRank(name) {
+      let dataToSearch;
+
+      if (this.userLane == 0) {
+        dataToSearch = this.topData;
+      } else if (this.userLane == 1) {
+        dataToSearch = this.jugData;
+      } else if (this.userLane == 2) {
+        dataToSearch = this.midData;
+      } else if (this.userLane == 3) {
+        dataToSearch = this.botData;
+      } else if (this.userLane == 4) {
+        dataToSearch = this.supData;
+      }
+
+      if (!dataToSearch || dataToSearch.length === 0) {
+        return -1;
+      }
+
+      for (let i = 0; i < dataToSearch.length; i++) {
+        if (dataToSearch[i].champion_name === name) {
+          return i;
+        }
+      }
+
+      return -2;
     },
     getTier() {
       axios
