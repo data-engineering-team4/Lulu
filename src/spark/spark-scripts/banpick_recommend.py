@@ -104,15 +104,14 @@ def process_team_data(team, query_list, my_lane, flag):
     team_summary_json = team_summary_pd.to_json()
     final_data = {
         "team_summary": json.loads(team_summary_json),
-        "extra_info": consumer_string
+        "extra_info": consumer_string,
     }
-    final_data_bytes = bytes(json.dumps(final_data), encoding='utf-8')
+    final_data_bytes = bytes(json.dumps(final_data), encoding="utf-8")
 
     response = client.put_record(
-        StreamName="sparktobackend",
-        Data=final_data_bytes,
-        PartitionKey="partition_key"
+        StreamName="sparktobackend", Data=final_data_bytes, PartitionKey="partition_key"
     )
+
 
 def recommend(my_lane, our_team, opponent_team, table_check):
     data_spark.createOrReplaceTempView("games")
@@ -151,15 +150,15 @@ def recommend(my_lane, our_team, opponent_team, table_check):
             team_summary_json = team_summary_pd.to_json()
             final_data = {
                 "team_summary": json.loads(team_summary_json),
-                "extra_info": "opponentlane"
+                "extra_info": "opponentlane",
             }
 
-            final_data_bytes = bytes(json.dumps(final_data), encoding='utf-8')
+            final_data_bytes = bytes(json.dumps(final_data), encoding="utf-8")
 
             response = client.put_record(
                 StreamName="sparktobackend",
                 Data=final_data_bytes,
-                PartitionKey="partition_key"
+                PartitionKey="partition_key",
             )
 
         process_team_data(opponent_team, query_list[3:6], my_lane, 1)
@@ -201,15 +200,15 @@ def recommend(my_lane, our_team, opponent_team, table_check):
         all_team_summary_json = all_team_summary_pd.to_json()
         all_final_data = {
             "team_summary": json.loads(all_team_summary_json),
-            "extra_info": "allteam"
+            "extra_info": "allteam",
         }
 
-        all_final_data_bytes = bytes(json.dumps(all_final_data), encoding='utf-8')
+        all_final_data_bytes = bytes(json.dumps(all_final_data), encoding="utf-8")
 
         response = client.put_record(
             StreamName="sparktobackend",
             Data=all_final_data_bytes,
-            PartitionKey="partition_key"
+            PartitionKey="partition_key",
         )
 
 

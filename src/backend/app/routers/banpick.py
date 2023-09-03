@@ -137,7 +137,6 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
             table_check.append("2")
         our_team_check_dicts = [row.__dict__ for row in our_team_check]
 
-
     if opponent_team:
         opponent_team_check = (
             db.query(OpponentTeam)
@@ -155,7 +154,6 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
             table_check.append("3")
         opponent_team_check_dicts = [row.__dict__ for row in opponent_team_check]
 
-
     opponent_champ = opponent_team.get(my_lane, "???")
     if opponent_champ != "???":
         opponent_lane_check = (
@@ -169,7 +167,6 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
         if not opponent_lane_check:
             table_check.append("4")
         opponent_lane_check_dicts = [row.__dict__ for row in opponent_lane_check]
-
 
     print("Received data:", my_lane, our_team, opponent_team)
 
@@ -193,12 +190,13 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
             print("Kinesis Error", e)
             return {"error": str(e)}
 
-    return {"table_check": table_check,
-            "all_team_check_dicts": all_team_check_dicts,
-            "our_team_check_dicts": our_team_check_dicts,
-            "opponent_team_check_dicts": opponent_team_check_dicts,
-            "opponent_lane_check_dicts": opponent_lane_check_dicts
-            }
+    return {
+        "table_check": table_check,
+        "all_team_check_dicts": all_team_check_dicts,
+        "our_team_check_dicts": our_team_check_dicts,
+        "opponent_team_check_dicts": opponent_team_check_dicts,
+        "opponent_lane_check_dicts": opponent_lane_check_dicts,
+    }
 
 
 @router.post("/banpick/search")
@@ -222,7 +220,6 @@ async def get_summoner_name(summoner_info: SummonerInfo, db: Session = Depends(g
 
 @router.post("/banpick/consume/{team}")
 async def consume_team(team: str):
-
     shard_iterator = client.get_shard_iterator(
         StreamName="sparktobackend",
         ShardId="shardId-000000000001",
@@ -238,8 +235,6 @@ async def consume_team(team: str):
             team_summary_received = data_json["team_summary"]
             extra_info_received = data_json["extra_info"]
             if extra_info_received == team:
-                return {
-                    "data": team_summary_received
-                }
+                return {"data": team_summary_received}
         shard_iterator = response["NextShardIterator"]
         time.sleep(1)
