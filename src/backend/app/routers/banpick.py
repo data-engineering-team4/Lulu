@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, Request
+import random
+
+from fastapi import APIRouter, Depends
+from fastapi_cache.decorator import cache
 from ..models.team_info import TeamInfo
 from ..models.team import AllTeam, OurTeam, OpponentTeam, OpponentLane
 from ..models.summoner_info import SummonerInfo
-from ..models.summoner import Summoner, create_summoner, get_champion_mastery_by_name
+from ..models.summoner import get_champion_mastery_by_name
 from ..db_session import SessionLocal
 from sqlalchemy.orm import Session
 import os
@@ -11,6 +14,7 @@ import json
 import boto3
 from joblib import load
 import pandas as pd
+import numpy as np
 from io import BytesIO
 import time
 
@@ -47,6 +51,12 @@ response = s3_client.get_object(
 progamer_csv_stream = BytesIO(response["Body"].read())
 progamer_df = pd.read_csv(progamer_csv_stream)
 
+
+response = s3_client.get_object(
+    Bucket="de-4-2", Key="data/progamer/index.csv"
+)
+index_csv_stream = BytesIO(response["Body"].read())
+index_df = pd.read_csv(index_csv_stream, index_col=0)
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(dir_path, "champions.json"), "r") as f:
@@ -200,21 +210,52 @@ async def get_team_info(team_info: TeamInfo, db: Session = Depends(get_db)):
 
 
 @router.post("/banpick/search")
-async def get_summoner_name(summoner_info: SummonerInfo, db: Session = Depends(get_db)):
+async def get_summoner_name(summoner_info: SummonerInfo):
     print("Received data:", summoner_info)
 
-    db_summoner = Summoner(summonerName=summoner_info.summonerName)
-    db_summoner = create_summoner(db, db_summoner)
+    mastery_data = get_champion_mastery_by_name(summoner_info.summonerName, api_key)
 
-    champion_mastery = get_champion_mastery_by_name(summoner_info.summonerName, api_key)
-    champion_mastery_df = pd.DataFrame([champion_mastery])
+    if 'id' in index_df.columns:
+        index_df.drop(columns=['id'], inplace=True)
+
+    df = pd.DataFrame(columns=index_df.columns)
+    update_dict = {}
+    for data in mastery_data:
+        champion_id = str(data["championId"])
+        champion_points = data["championPoints"]
+        update_dict[champion_id] = champion_points
+
+    puuid = mastery_data[0]['puuid']
+    df.loc[puuid] = np.nan
+
+    df.loc[puuid, update_dict.keys()] = update_dict.values()
+
+    if df.isnull().values.any():
+        df.fillna(0, inplace=True)
+
+    champion_mastery_df = df.copy()
+
+    if champion_mastery_df.isnull().values.any():
+        champion_mastery_df.fillna(0, inplace=True)
+
     user_cluster = kmeans_model.predict(champion_mastery_df)
     recommended_progamer = progamer_df[progamer_df["cluster"] == user_cluster[0]]
+    recommended_progamer = recommended_progamer.to_dict(orient='records')
+
+    # 이름을 기반으로 시드 설정
+    seed = sum(ord(char) for char in summoner_info.summonerName)
+
+    # 시드 설정
+    random.seed(seed)
+
+    random_item = random.choice(recommended_progamer)
+
+    print(f"✅ recommendedProgamer: {random_item}")
 
     return {
-        "summonerName": db_summoner.summonerName,
-        "championMastery": champion_mastery,
-        "recommendedProgamer": recommended_progamer.to_dict(orient="records"),
+        "summonerName": summoner_info.summonerName,
+        "championMastery": mastery_data,
+        "recommendedProgamer": random_item,
     }
 
 
