@@ -198,7 +198,7 @@
                     <div class="recommend-section-part" style="display: flex; align-items: center;">
                       <div v-for="item in opponent_lane_check_dicts" :key="item.championName" class="opponent-team-recommend" style="width: 33%; flex:1; flex-direction: column; align-items: center;">
                         <img :src="getImage(item.championName)" style="max-width: 80%;max-height: 80%;">
-                        <div class="custom-font" style="margin-top:10%">{{ getRank(item.championName) }}위</div>
+                        <div class="custom-font" style="margin-top:10%">{{ getMsg(item.championName) }}</div>
                       </div>
                     </div>
                   </div>
@@ -207,7 +207,7 @@
                     <div class="recommend-section-part" style="display: flex; align-items: center;">
                       <div v-for="item in opponent_team_check_dicts" :key="item.championName" class="opponent-team-recommend" style="width: 33%; flex:1; flex-direction: column; align-items: center;">
                         <img :src="getImage(item.championName)" style="max-width: 80%;max-height: 80%;">
-                        <div class="custom-font" style="margin-top:10%">{{ getRank(item.championName) }}위</div>
+                        <div class="custom-font" style="margin-top:10%">{{ getMsg(item.championName) }}</div>
                       </div>
                     </div>
                   </div>
@@ -218,16 +218,16 @@
                     <div class="recommend-section-part" style="display: flex; align-items: center;">
                       <div v-for="item in our_team_check_dicts" :key="item.championName" class="opponent-team-recommend" style="width: 33%; flex:1; flex-direction: column; align-items: center;">
                         <img :src="getImage(item.championName)" style="max-width: 80%;max-height: 80%;">
-                        <div class="custom-font" style="margin-top:10%">{{ getRank(item.championName) }}위</div>
+                        <div class="custom-font" style="margin-top:10%">{{ getMsg(item.championName) }}</div>
                       </div>
                     </div>
                   </div>
                   <div class="recommend-section-final">
                     <h3 class="custom-font" style="color:#9752ff; margin-bottom: 5%; margin-top: 0%;">전체 조합</h3>
                     <div class="recommend-section-part" style="display: flex; align-items: center;">
-                      <div v-for="item in all_team_check_dicts" :key="item.championName" class="opponent-team-recommend" style="width: 33%; flex:1; flex-direction: column; align-items: center;">
+                      <div v-for="item in all_team_check_dicts" :key="item.championName" class="opponent-team-recommend" style="width: 33%; height:50%; flex:1; flex-direction: column; align-items: center;">
                         <img :src="getImage(item.championName)" style="max-width: 80%;max-height: 80%;">
-                        <div class="custom-font" style="margin-top:10%">{{ getRank(item.championName) }}위</div>
+                        <div class="custom-font" style="margin-top:10%">{{ getMsg(item.championName) }}</div>
                       </div>
                     </div>
                   </div>
@@ -745,6 +745,10 @@ export default {
         return { backgroundColor: '#ffffff' };
 
       }
+    },
+    getMsg(championName) {
+    const rank = this.getRank(championName);
+    return rank === -2 ? "없음" : `${rank}위`;
     },
     getRank(name) {
       let dataToSearch;

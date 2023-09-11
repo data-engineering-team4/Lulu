@@ -53,9 +53,7 @@ progamer_csv_stream = BytesIO(response["Body"].read())
 progamer_df = pd.read_csv(progamer_csv_stream)
 
 
-response = s3_client.get_object(
-    Bucket="de-4-2", Key="data/progamer/index.csv"
-)
+response = s3_client.get_object(Bucket="de-4-2", Key="data/progamer/index.csv")
 index_csv_stream = BytesIO(response["Body"].read())
 index_df = pd.read_csv(index_csv_stream, index_col=0)
 
@@ -228,8 +226,8 @@ async def get_summoner_name(summoner_info: SummonerInfo):
 
     mastery_data = get_champion_mastery_by_name(summoner_info.summonerName, api_key)
 
-    if 'id' in index_df.columns:
-        index_df.drop(columns=['id'], inplace=True)
+    if "id" in index_df.columns:
+        index_df.drop(columns=["id"], inplace=True)
 
     df = pd.DataFrame(columns=index_df.columns)
     update_dict = {}
@@ -238,7 +236,7 @@ async def get_summoner_name(summoner_info: SummonerInfo):
         champion_points = data["championPoints"]
         update_dict[champion_id] = champion_points
 
-    puuid = mastery_data[0]['puuid']
+    puuid = mastery_data[0]["puuid"]
     df.loc[puuid] = np.nan
 
     df.loc[puuid, update_dict.keys()] = update_dict.values()
@@ -253,7 +251,7 @@ async def get_summoner_name(summoner_info: SummonerInfo):
 
     user_cluster = kmeans_model.predict(champion_mastery_df)
     recommended_progamer = progamer_df[progamer_df["cluster"] == user_cluster[0]]
-    recommended_progamer = recommended_progamer.to_dict(orient='records')
+    recommended_progamer = recommended_progamer.to_dict(orient="records")
 
     # 이름을 기반으로 시드 설정
     seed = sum(ord(char) for char in summoner_info.summonerName)

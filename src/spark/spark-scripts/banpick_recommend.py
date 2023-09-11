@@ -163,6 +163,7 @@ def recommend(my_lane, our_team, opponent_team, table_check):
         process_team_data(opponent_team, query_list[3:6], my_lane, 1)
 
     if our_team and opponent_team and "1" in table_check:
+
         filter_all_team_query = query_list[6]
         all_team_summary_query = query_list[7]
 
